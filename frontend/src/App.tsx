@@ -7,22 +7,26 @@ import { PositionDetail } from "./pages/PositionDetail";
 import { Strategies } from "./pages/Strategies";
 import { StrategyDetail } from "./pages/StrategyDetail";
 import { Unlock } from "./pages/Unlock";
+import { PointCloud } from "./PointCloud";
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/unlock" element={<Unlock />} />
-      <Route element={<Gate />}>
-        <Route element={<Shell />}>
-          <Route index element={<Account />} />
-          <Route path="strategies" element={<Strategies />} />
-          <Route path="strategies/:id" element={<StrategyDetail />} />
-          <Route path="positions/:symbol" element={<PositionDetail />} />
-          <Route path="order" element={<OrderTicket />} />
+    <>
+      <PointCloud />
+      <Routes>
+        <Route path="/unlock" element={<Unlock />} />
+        <Route element={<Gate />}>
+          <Route element={<Shell />}>
+            <Route index element={<Account />} />
+            <Route path="strategies" element={<Strategies />} />
+            <Route path="strategies/:id" element={<StrategyDetail />} />
+            <Route path="positions/:symbol" element={<PositionDetail />} />
+            <Route path="order" element={<OrderTicket />} />
+          </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 
