@@ -312,3 +312,20 @@ def test_account_reads_the_broker(client, auth, fake_broker):
     assert account.status_code == 200
     assert account.json()["equity"] == 100000
     assert positions.json()[0]["symbol"] == "AAPL"
+
+
+def test_empty_portfolio_is_an_empty_result_not_an_error(client, auth):
+    account_positions = client.get("/api/positions", headers=auth)
+    strategy_positions = client.get("/api/strategy-positions", headers=auth)
+    fills = client.get("/api/fills", headers=auth)
+    detail = client.get("/api/positions/NOTHELD", headers=auth)
+
+    assert account_positions.status_code == 200
+    assert account_positions.json() == []
+    assert strategy_positions.status_code == 200
+    assert strategy_positions.json() == []
+    assert fills.status_code == 200
+    assert fills.json() == []
+    assert detail.status_code == 200
+    assert detail.json()["account_position"] is None
+    assert detail.json()["account_error"] is None

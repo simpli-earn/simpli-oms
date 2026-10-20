@@ -35,7 +35,12 @@ export function PositionDetail() {
           <strong className={tone(account?.unrealized_pl)}>{account ? money(account.unrealized_pl) : "—"}</strong>
         </article>
       </section>
-      {detail && detail.strategies.length === 0 ? (
+      {detail && !account && detail.strategies.length === 0 ? (
+        <section className="panel">
+          <Empty>No open account position or OMS activity for {symbol}.</Empty>
+        </section>
+      ) : null}
+      {detail && account && detail.strategies.length === 0 ? (
         <section className="panel">
           <Empty>No strategy has a recorded trade in this symbol.</Empty>
         </section>

@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_broker, get_db, require_api_key
 from app.models import Fill, StrategyPosition
-from app.present import fill_out
-from app.schemas import AccountOut, AccountPositionOut, StrategyTrades, SymbolDetailOut
+from app.present import fill_out, position_out
+from app.schemas import AccountOut, AccountPositionOut, FillOut, PositionOut, StrategyTrades, SymbolDetailOut
 from app.services.broker import BrokerError
 
 router = APIRouter(prefix="/api", tags=["portfolio"], dependencies=[Depends(require_api_key)])
@@ -25,6 +25,25 @@ def get_positions(broker=Depends(get_broker)):
         return broker.get_positions()
     except BrokerError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/strategy-positions", response_model=list[PositionOut])
+def get_strategy_positions(db: Session = Depends(get_db)):
+    """Open positions attributed to each OMS strategy, independent of Alpaca's account view."""
+    positions = db.scalars(
+        select(StrategyPosition)
+        .where(StrategyPosition.qty != 0)
+        .order_by(StrategyPosition.symbol, StrategyPosition.strategy_id)
+    )
+    return [position_out(item) for item in positions]
+
+
+@router.get("/fills", response_model=list[FillOut])
+def get_fills(limit: int = 20, db: Session = Depends(get_db)):
+    """Latest OMS-attributed fills for the activity feed."""
+    safe_limit = min(max(limit, 1), 100)
+    fills = db.scalars(select(Fill).order_by(Fill.filled_at.desc()).limit(safe_limit))
+    return [fill_out(item) for item in fills]
 
 
 @router.get("/positions/{symbol}", response_model=SymbolDetailOut)
