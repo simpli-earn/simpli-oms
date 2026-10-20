@@ -9,7 +9,7 @@ export function Shell() {
     <div className="shell">
       <aside>
         <div className="brand">
-          <span>Simpli</span>
+          <span>SimpliEarn</span>
           <small>Paper OMS</small>
         </div>
         <nav>

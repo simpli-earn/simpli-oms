@@ -39,7 +39,7 @@ export function Unlock() {
   return (
     <div className="unlock">
       <form onSubmit={onSubmit}>
-        <p className="eyebrow">Simpli OMS</p>
+        <p className="eyebrow">SimpliEarn · Paper OMS</p>
         <h1>Open the desk</h1>
         <p className="lede">
           One key for this paper account. Strategy ids travel on each order, not in the key.
