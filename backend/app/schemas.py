@@ -62,7 +62,8 @@ class OrderIn(BaseModel):
     symbol: str | None = None
     side: Side | None = None
     type: OrderTypeName
-    qty: float = Field(gt=0)
+    qty: float | None = Field(default=None, gt=0)
+    notional: float | None = Field(default=None, gt=0)
     limit_price: float | None = None
     stop_price: float | None = None
     time_in_force: Literal["day", "gtc"] = "day"
@@ -79,7 +80,14 @@ class OrderIn(BaseModel):
             elif len(self.client_order_id) > 48:
                 raise ValueError("client_order_id must be 48 characters or fewer")
 
+        if self.qty is None and self.notional is None:
+            raise ValueError("qty or notional is required")
+        if self.qty is not None and self.notional is not None:
+            raise ValueError("provide qty or notional, not both")
+
         if self.order_class == "mleg":
+            if self.notional is not None:
+                raise ValueError("notional is only valid for simple equity market buys")
             if self.type not in ("market", "limit"):
                 raise ValueError("multi-leg orders must be market or limit")
             if not self.legs or not 2 <= len(self.legs) <= 4:
@@ -110,8 +118,13 @@ class OrderIn(BaseModel):
                     raise ValueError("options orders require position_intent")
             self.legs = None
 
+        if self.notional is not None and (
+            self.asset_class != "us_equity" or self.side != "buy" or self.type != "market"
+        ):
+            raise ValueError("notional is only valid for simple equity market buys")
+
         whole = self.asset_class == "us_option"
-        if whole and abs(self.qty - round(self.qty)) > 1e-9:
+        if whole and self.qty is not None and abs(self.qty - round(self.qty)) > 1e-9:
             raise ValueError("option quantity must be a whole number of contracts")
 
         if self.type == "market":
@@ -160,6 +173,7 @@ class OrderOut(BaseModel):
     side: str | None
     type: str
     qty: float
+    notional: float | None = None
     limit_price: float | None
     stop_price: float | None
     time_in_force: str

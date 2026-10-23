@@ -33,7 +33,7 @@ def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool
         symbol=data.symbol,
         side=data.side,
         type=data.type,
-        qty=data.qty,
+        qty=data.qty or 0,
         limit_price=data.limit_price,
         stop_price=data.stop_price,
         time_in_force=data.time_in_force,
@@ -76,6 +76,7 @@ def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool
         stop_price=order.stop_price,
         time_in_force=order.time_in_force,
         position_intent=order.position_intent,
+        notional=data.notional,
         legs=[
             SubmitLeg(
                 symbol=leg.symbol,

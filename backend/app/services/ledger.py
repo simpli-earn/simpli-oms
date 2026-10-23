@@ -13,14 +13,16 @@ OPTION_MULTIPLIER = 100.0
 
 
 def debit_cost(order: OrderIn) -> float | None:
+    if order.notional is not None:
+        return round(order.notional, 4)
     if order.order_class == "mleg":
         if order.type != "limit" or order.limit_price is None or order.limit_price <= 0:
             return None
-        return round(order.limit_price * order.qty * OPTION_MULTIPLIER, 4)
+        return round(order.limit_price * (order.qty or 0) * OPTION_MULTIPLIER, 4)
     if order.side != "buy" or order.limit_price is None:
         return None
     multiplier = OPTION_MULTIPLIER if order.asset_class == "us_option" else 1.0
-    return round(order.limit_price * order.qty * multiplier, 4)
+    return round(order.limit_price * (order.qty or 0) * multiplier, 4)
 
 
 def ensure_affordable(strategy: Strategy, order: OrderIn) -> None:
@@ -42,7 +44,7 @@ def ensure_closable(db: Session, strategy: Strategy, order: OrderIn) -> None:
                 leg.symbol,
                 leg.position_intent,
                 leg.side,
-                order.qty * leg.ratio_qty,
+                (order.qty or 0) * leg.ratio_qty,
             )
         return
     _ensure_leg(
@@ -50,7 +52,7 @@ def ensure_closable(db: Session, strategy: Strategy, order: OrderIn) -> None:
         order.symbol or "",
         order.position_intent,
         order.side,
-        order.qty,
+        order.qty or 0,
     )
 
 

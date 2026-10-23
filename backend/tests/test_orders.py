@@ -61,6 +61,47 @@ def test_debit_over_budget_is_rejected(client, auth):
     assert "below order cost" in response.json()["detail"]
 
 
+def test_equity_notional_market_buy_is_forwarded(client, auth, fake_broker):
+    _strategy(client, auth, cash=1000)
+    response = client.post(
+        "/api/orders",
+        json={
+            "strategy_id": "alpha",
+            "symbol": "SPY",
+            "side": "buy",
+            "type": "market",
+            "notional": 100,
+            "time_in_force": "day",
+        },
+        headers=auth,
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["notional"] == 100
+    assert fake_broker.submitted[0].notional == 100
+    built = build_alpaca_request(fake_broker.submitted[0])
+    assert built.notional == 100
+    assert built.qty is None
+
+
+def test_notional_buy_is_checked_against_strategy_cash(client, auth):
+    _strategy(client, auth, cash=50)
+    response = client.post(
+        "/api/orders",
+        json={
+            "strategy_id": "alpha",
+            "symbol": "SPY",
+            "side": "buy",
+            "type": "market",
+            "notional": 100,
+        },
+        headers=auth,
+    )
+
+    assert response.status_code == 400
+    assert "100.00" in response.json()["detail"]
+
+
 def test_option_cost_uses_contract_multiplier(client, auth):
     _strategy(client, auth, cash=100)
     response = client.post(

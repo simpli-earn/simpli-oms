@@ -25,6 +25,7 @@ def order_out(order: Order) -> OrderOut:
         side=order.side,
         type=order.type,
         qty=order.qty,
+        notional=order.request_payload.get("notional"),
         limit_price=order.limit_price,
         stop_price=order.stop_price,
         time_in_force=order.time_in_force,

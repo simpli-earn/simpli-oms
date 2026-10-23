@@ -47,6 +47,7 @@ class SubmitRequest:
     stop_price: float | None
     time_in_force: str
     position_intent: str | None
+    notional: float | None = None
     legs: list[SubmitLeg] = field(default_factory=list)
 
 
@@ -114,11 +115,13 @@ def build_alpaca_request(request: SubmitRequest):
 
     common = {
         "symbol": request.symbol,
-        "qty": request.qty,
         "side": _side(request.side or "buy"),
         "time_in_force": tif,
         "client_order_id": request.client_order_id,
     }
+    common["notional" if request.notional is not None else "qty"] = (
+        request.notional if request.notional is not None else request.qty
+    )
     if request.position_intent:
         common["position_intent"] = INTENTS[request.position_intent]
     if request.type == "market":
