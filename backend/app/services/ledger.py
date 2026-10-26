@@ -80,6 +80,8 @@ def release_reservation(db: Session, strategy: Strategy, order: Order) -> None:
     left = qcash(order.reserved_notional)
     if left == 0:
         return
+    # Write any fill applied in this session first, or expire would discard it.
+    db.flush()
     db.expire(strategy)
     strategy.cash_remaining = qcash(strategy.cash_remaining) + left
     strategy.cash_reserved = qcash(strategy.cash_reserved) - left

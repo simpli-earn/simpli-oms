@@ -320,6 +320,26 @@ def test_fill_updates_cash_position_and_symbol_detail(client, auth, fake_broker)
     assert len(detail["strategies"][0]["trades"]) == 3
 
 
+def test_notional_buy_filled_under_clears_reserved_cash(client, auth, fake_broker):
+    _strategy(client, auth, cash=1000)
+    created = client.post(
+        "/api/orders",
+        json=_equity(type="market", qty=None, limit_price=None, notional=39.60),
+        headers=auth,
+    )
+    assert created.status_code == 201, created.text
+
+    remote = fake_broker.orders[created.json()["alpaca_order_id"]]
+    remote.status = "filled"
+    remote.filled_qty = 0.1786
+    remote.filled_avg_price = 221.6686  # $39.59, a cent under the notional
+    sync_once(client.app.state.session_factory, fake_broker)
+
+    strategy = client.get("/api/strategies/alpha", headers=auth).json()
+    assert strategy["cash_reserved"] == 0
+    assert strategy["cash_remaining"] == 960.41
+
+
 def test_credit_multi_leg_fill_adds_cash(client, auth, fake_broker):
     _strategy(client, auth, cash=100)
     response = client.post(
