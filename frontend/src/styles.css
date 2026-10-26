@@ -34,7 +34,7 @@ main { width:min(1280px,100%); padding:42px 48px 72px; }
 .page-header p,.lede { max-width:64ch; margin-top:9px; color:var(--muted-foreground); font-size:.94rem; }
 .eyebrow { color:var(--brand); font-size:.72rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; }
 .surface,.stat,.panel,.ticket,.unlock form,.portfolio-hero { background:var(--surface); border:1px solid var(--border); backdrop-filter:blur(18px); }
-.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:16px; }
 .stat { padding:16px; border-radius:1rem; }
 .stat span,.muted,.panel-head p { color:var(--muted-foreground); }
 .stat strong { display:block; margin-top:8px; font-size:1.3rem; font-weight:400; }

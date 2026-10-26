@@ -13,26 +13,33 @@ Signals and trade ideas stay outside. Every order names a strategy id that was r
 
 ## Run it
 
-Python 3.11 or newer:
+Python 3.11 or newer, and Node.js 18 or newer:
 
 ```bash
-cd backend
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
+python setup.py
 ```
 
-Edit `backend/.env`:
+The shared Alpaca paper account and the shared database are already set up. Replace `backend/.env` with the env file you were given. That file is the only thing a new checkout needs. It is not in git. These values are already filled in:
+
+- `APCA_API_KEY_ID` and `APCA_API_SECRET_KEY` — the shared Alpaca paper keys
+- `OMS_API_KEY` — callers send this as `X-API-Key`
+- `OMS_DATABASE_URL` — the session-pooler connection for the `oms_app` database user
+
+Leave the sync, pool, and CORS lines as they are in [backend/.env.example](backend/.env.example).
+
+## Shared database
+
+Every local backend reads and writes the same strategies, orders, fills, positions, and ledger in one Supabase Postgres database. The frontend talks only to this API. It does not use a Supabase key.
+
+`OMS_DATABASE_URL` is the session pooler on port 5432. The app uses psycopg 3, requires TLS, and keeps a pool of two connections. `oms_app` can read and write only the OMS tables. Each order locks its strategy row while a fill is applied, so two laptops can sync at the same time. Every order still requires an existing `strategy_id`.
+
+[`backend/supabase_schema.sql`](backend/supabase_schema.sql) is the table definition and is already applied. [`backend/import_sqlite.py`](backend/import_sqlite.py) was used once to copy the old local book. A new checkout does not run either one.
+
+For a single-machine offline test only, SQLite remains supported by explicitly setting:
 
 ```bash
-APCA_API_KEY_ID=your-paper-key
-APCA_API_SECRET_KEY=your-paper-secret
-APCA_API_BASE_URL=https://paper-api.alpaca.markets
-OMS_API_KEY=dev-key
+OMS_DATABASE_URL=sqlite:///./data/oms.db
 ```
-
-`OMS_API_KEY` is the single credential for this platform. Callers send it as `X-API-Key`. The Alpaca secret stays on the server.
 
 ```bash
 uvicorn app.main:app --reload --port 8787
@@ -113,4 +120,4 @@ Other reads:
 
 ## Cash in this version
 
-A limit buy, a debit option, or a debit multi-leg order is rejected when `limit price × quantity × multiplier` is above the strategy's remaining cash. The multiplier is 1 for stocks and 100 for options. Cash and positions change when Alpaca reports a fill. Two orders sent at the same moment can both pass the cash check; reserving cash at accept time is later work. `sell_to_open` is forwarded to Alpaca without an options-margin model.
+A limit buy, a notional market buy, a debit option, or a debit multi-leg order is rejected when its estimated cost is above the strategy's spendable cash. Accepting the order reserves that cost immediately, so a second order cannot spend it. The reservation is released on reject, cancel, or expiry, and adjusted when the fill price differs from the estimate. Sells and credit multi-leg orders change cash when Alpaca reports the fill. The multiplier is 1 for stocks and 100 for options. `sell_to_open` is forwarded to Alpaca without an options-margin model.

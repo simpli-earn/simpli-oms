@@ -20,6 +20,10 @@ export function StrategyDetail() {
             <strong>{money(book.strategy.cash_remaining)}</strong>
           </article>
           <article className="stat">
+            <span>Reserved</span>
+            <strong>{money(book.strategy.cash_reserved)}</strong>
+          </article>
+          <article className="stat">
             <span>Budget</span>
             <strong>{money(book.strategy.cash_budget)}</strong>
           </article>

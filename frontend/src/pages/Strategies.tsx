@@ -71,6 +71,7 @@ export function Strategies() {
                 <th>Strategy</th>
                 <th className="num">Budget</th>
                 <th className="num">Cash left</th>
+                <th className="num">Reserved</th>
                 <th className="num">Realized</th>
                 <th className="num">Unrealized</th>
               </tr>
@@ -83,6 +84,7 @@ export function Strategies() {
                   </td>
                   <td className="num">{money(strategy.cash_budget)}</td>
                   <td className="num">{money(strategy.cash_remaining)}</td>
+                  <td className="num">{money(strategy.cash_reserved)}</td>
                   <td className={`num ${tone(strategy.realized_pnl)}`}>{money(strategy.realized_pnl)}</td>
                   <td className={`num ${tone(strategy.unrealized_pnl)}`}>{money(strategy.unrealized_pnl)}</td>
                 </tr>

@@ -123,7 +123,7 @@ def install_python(python: Path) -> None:
         [
             str(python),
             "-c",
-            "import fastapi, uvicorn, sqlalchemy, pydantic_settings, alpaca",
+            "import fastapi, uvicorn, sqlalchemy, pydantic_settings, alpaca, psycopg",
         ],
         BACKEND,
     )
@@ -139,9 +139,11 @@ def ensure_env() -> None:
         return
     shutil.copyfile(example, destination)
     log("created backend/.env from backend/.env.example")
+    log("Replace backend/.env with the shared env file. Do not commit it.")
 
 
-def env_needs_keys() -> bool:
+def missing_env_values() -> list[str]:
+    """Names that are still empty or still the example placeholders."""
     destination = BACKEND / ".env"
     values: dict[str, str] = {}
     for line in destination.read_text(encoding="utf-8").splitlines():
@@ -150,7 +152,17 @@ def env_needs_keys() -> bool:
             continue
         key, value = stripped.split("=", 1)
         values[key.strip()] = value.strip().strip('"').strip("'")
-    return not values.get("APCA_API_KEY_ID") or not values.get("APCA_API_SECRET_KEY")
+    missing: list[str] = []
+    for key in ("APCA_API_KEY_ID", "APCA_API_SECRET_KEY", "OMS_API_KEY"):
+        value = values.get(key, "")
+        if not value or value.startswith("your-"):
+            missing.append(key)
+    url = values.get("OMS_DATABASE_URL", "")
+    if not url.startswith("postgresql") or any(
+        marker in url for marker in ("PROJECT_REF", "PASSWORD@", "POOLER_HOST", "YOUR_PASSWORD", "YOUR_POOLER_HOST")
+    ):
+        missing.append("OMS_DATABASE_URL")
+    return missing
 
 
 def npm_command(args: list[str]) -> list[str]:
@@ -193,10 +205,14 @@ def main() -> None:
     install_node()
     log("")
     log("Setup finished.")
-    if env_needs_keys():
-        log("Add Alpaca paper keys to backend/.env before sending orders:")
-        log("  APCA_API_KEY_ID")
-        log("  APCA_API_SECRET_KEY")
+    missing = missing_env_values()
+    if missing:
+        log("Paste the shared backend/.env over backend/.env before starting.")
+        log("These values are still empty or still placeholders:")
+        for key in missing:
+            log(f"  {key}")
+    else:
+        log("backend/.env has the shared keys. Nothing else to fill in.")
     uvicorn = f"{python} -m uvicorn app.main:app --reload --port 8787"
     log("Start the backend from the backend directory:")
     log(f"  {uvicorn}")

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -6,7 +8,7 @@ from app.deps import get_broker, get_db, require_api_key
 from app.models import Fill, Order, Strategy
 from app.present import fill_out, order_out, position_out, strategy_out
 from app.schemas import BookOut, StrategyIn, StrategyOut
-from app.services.ledger import unrealized_pnl
+from app.services.ledger import qcash, record_ledger, unrealized_pnl
 from app.services.quotes import price_map
 
 router = APIRouter(prefix="/api/strategies", tags=["strategies"], dependencies=[Depends(require_api_key)])
@@ -16,8 +18,16 @@ router = APIRouter(prefix="/api/strategies", tags=["strategies"], dependencies=[
 def create_strategy(body: StrategyIn, db: Session = Depends(get_db)):
     if db.get(Strategy, body.id) is not None:
         raise HTTPException(status_code=409, detail="strategy already exists")
-    strategy = Strategy(id=body.id, cash_budget=body.cash_budget, cash_remaining=body.cash_budget)
+    budget = qcash(body.cash_budget)
+    strategy = Strategy(
+        id=body.id,
+        cash_budget=budget,
+        cash_remaining=budget,
+        cash_reserved=Decimal("0"),
+    )
     db.add(strategy)
+    db.flush()
+    record_ledger(db, strategy.id, None, None, "fund", budget, 0, None)
     db.commit()
     db.refresh(strategy)
     return strategy_out(strategy, 0.0)
@@ -53,7 +63,7 @@ def get_book(strategy_id: str, db: Session = Depends(get_db), broker=Depends(get
     positions = [
         position_out(pos, None if prices is None else prices.get(pos.symbol))
         for pos in strategy.positions
-        if abs(pos.qty) >= 1e-8
+        if abs(Decimal(str(pos.qty))) >= Decimal("0.00000001")
     ]
     orders = db.scalars(
         select(Order)

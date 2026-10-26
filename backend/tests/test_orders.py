@@ -1,7 +1,11 @@
+from fastapi.testclient import TestClient
 from alpaca.trading.enums import OrderClass, PositionIntent
 
+from app.config import Settings
+from app.main import create_app
 from app.services.broker import SubmitLeg, SubmitRequest, build_alpaca_request
 from app.services.sync import sync_once
+from tests.fake_broker import FakeBroker
 
 
 def _strategy(client, auth, strategy_id="alpha", cash=1000):
@@ -35,6 +39,46 @@ def test_registers_strategy(client, auth):
     listed = client.get("/api/strategies", headers=auth)
     assert listed.status_code == 200
     assert listed.json()[0]["id"] == "alpha"
+
+
+def test_two_backends_share_one_database(tmp_path, auth):
+    database_url = f"sqlite:///{tmp_path}/shared.db"
+    settings = Settings(
+        _env_file=None,
+        oms_api_key="test-key",
+        oms_database_url=database_url,
+        oms_sync_enabled=False,
+        apca_api_key_id="test-key",
+        apca_api_secret_key="test-secret",
+    )
+    first_app = create_app(settings, FakeBroker())
+    second_app = create_app(settings, FakeBroker())
+    with TestClient(first_app) as first, TestClient(second_app) as second:
+        created = first.post(
+            "/api/strategies",
+            json={"id": "shared", "cash_budget": 500},
+            headers=auth,
+        )
+        assert created.status_code == 201
+        seen_elsewhere = second.get("/api/strategies/shared", headers=auth)
+        assert seen_elsewhere.status_code == 200
+        assert seen_elsewhere.json()["cash_budget"] == 500
+        order = first.post(
+            "/api/orders",
+            json=_equity("shared", qty=1, limit_price=100),
+            headers=auth,
+        )
+        assert order.status_code == 201
+        shared_orders = second.get("/api/orders", headers=auth)
+        assert shared_orders.status_code == 200
+        assert shared_orders.json()[0]["id"] == order.json()["id"]
+        assert shared_orders.json()[0]["strategy_id"] == "shared"
+
+
+def test_health_checks_database(client):
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "database": "sqlite"}
 
 
 def test_rejects_duplicate_strategy(client, auth):
@@ -201,6 +245,7 @@ def test_repeated_client_order_id_returns_the_original(client, auth, fake_broker
     assert second.status_code == 200
     assert first.json()["id"] == second.json()["id"]
     assert len(fake_broker.submitted) == 1
+    assert client.get("/api/strategies/alpha", headers=auth).json()["cash_remaining"] == 800
 
 
 def test_sell_requires_a_strategy_position(client, auth):
@@ -232,14 +277,18 @@ def test_fill_updates_cash_position_and_symbol_detail(client, auth, fake_broker)
     _strategy(client, auth, cash=1000)
     created = client.post("/api/orders", json=_equity(), headers=auth)
     assert created.status_code == 201, created.text
-    assert client.get("/api/strategies/alpha", headers=auth).json()["cash_remaining"] == 1000
+    reserved = client.get("/api/strategies/alpha", headers=auth).json()
+    assert reserved["cash_remaining"] == 800
+    assert reserved["cash_reserved"] == 200
 
     remote = fake_broker.orders[created.json()["alpaca_order_id"]]
     remote.status = "partially_filled"
     remote.filled_qty = 1
     remote.filled_avg_price = 100
     sync_once(client.app.state.session_factory, fake_broker)
-    assert client.get("/api/strategies/alpha", headers=auth).json()["cash_remaining"] == 900
+    partial = client.get("/api/strategies/alpha", headers=auth).json()
+    assert partial["cash_remaining"] == 800
+    assert partial["cash_reserved"] == 100
 
     remote.status = "filled"
     remote.filled_qty = 2
@@ -247,6 +296,7 @@ def test_fill_updates_cash_position_and_symbol_detail(client, auth, fake_broker)
     sync_once(client.app.state.session_factory, fake_broker)
     strategy = client.get("/api/strategies/alpha", headers=auth).json()
     assert strategy["cash_remaining"] == 798
+    assert strategy["cash_reserved"] == 0
     book = client.get("/api/strategies/alpha/book", headers=auth).json()
     assert book["positions"][0]["qty"] == 2
     assert book["positions"][0]["avg_price"] == 101
@@ -263,6 +313,7 @@ def test_fill_updates_cash_position_and_symbol_detail(client, auth, fake_broker)
 
     strategy = client.get("/api/strategies/alpha", headers=auth).json()
     assert strategy["cash_remaining"] == 1018
+    assert strategy["cash_reserved"] == 0
     assert strategy["realized_pnl"] == 18
     detail = client.get("/api/positions/AAPL", headers=auth).json()
     assert detail["strategies"][0]["strategy_id"] == "alpha"
@@ -323,6 +374,36 @@ def test_broker_failure_is_stored_and_not_resent(client, auth, fake_broker):
     assert again.status_code == 200
     assert again.json()["status"] == "rejected"
     assert fake_broker.submitted == []
+    restored = client.get("/api/strategies/alpha", headers=auth).json()
+    assert restored["cash_remaining"] == 1000
+    assert restored["cash_reserved"] == 0
+
+
+def test_open_debit_blocks_a_second_order(client, auth):
+    _strategy(client, auth, cash=150)
+    first = client.post("/api/orders", json=_equity(qty=1, limit_price=100), headers=auth)
+    assert first.status_code == 201, first.text
+    cash = client.get("/api/strategies/alpha", headers=auth).json()
+    assert cash["cash_remaining"] == 50
+    assert cash["cash_reserved"] == 100
+    second = client.post("/api/orders", json=_equity(qty=1, limit_price=100), headers=auth)
+    assert second.status_code == 400
+    assert "below order cost" in second.json()["detail"]
+
+
+def test_cancel_returns_reserved_cash_after_sync(client, auth, fake_broker):
+    _strategy(client, auth, cash=1000)
+    created = client.post("/api/orders", json=_equity(), headers=auth)
+    assert created.status_code == 201, created.text
+    canceled = client.delete(f"/api/orders/{created.json()['id']}", headers=auth)
+    assert canceled.status_code == 200
+    assert canceled.json()["status"] == "pending_cancel"
+    held = client.get("/api/strategies/alpha", headers=auth).json()
+    assert held["cash_remaining"] == 800
+    sync_once(client.app.state.session_factory, fake_broker)
+    released = client.get("/api/strategies/alpha", headers=auth).json()
+    assert released["cash_remaining"] == 1000
+    assert released["cash_reserved"] == 0
 
 
 def test_cancel_marks_order_pending_cancel(client, auth, fake_broker):

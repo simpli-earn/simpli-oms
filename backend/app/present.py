@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from app.models import Fill, Order, Strategy, StrategyPosition
 from app.schemas import FillOut, LegOut, OrderOut, PositionOut, StrategyOut
 
@@ -7,6 +9,7 @@ def strategy_out(strategy: Strategy, unrealized: float | None = None) -> Strateg
         id=strategy.id,
         cash_budget=strategy.cash_budget,
         cash_remaining=strategy.cash_remaining,
+        cash_reserved=strategy.cash_reserved,
         realized_pnl=strategy.realized_pnl,
         unrealized_pnl=unrealized,
         created_at=strategy.created_at,
@@ -65,9 +68,12 @@ def fill_out(fill: Fill) -> FillOut:
 
 def position_out(position: StrategyPosition, price: float | None = None) -> PositionOut:
     unrealized = None
-    if price is not None and abs(position.qty) >= 1e-8:
-        multiplier = 100.0 if position.asset_class == "us_option" else 1.0
-        unrealized = round((price - position.avg_price) * position.qty * multiplier, 4)
+    if price is not None and abs(Decimal(str(position.qty))) >= Decimal("0.00000001"):
+        multiplier = Decimal("100") if position.asset_class == "us_option" else Decimal("1")
+        unrealized = round(
+            float((Decimal(str(price)) - Decimal(str(position.avg_price))) * Decimal(str(position.qty)) * multiplier),
+            4,
+        )
     return PositionOut(
         strategy_id=position.strategy_id,
         symbol=position.symbol,

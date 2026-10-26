@@ -8,11 +8,19 @@ from app.errors import AppError
 from app.models import Order, OrderLeg, Strategy, utcnow
 from app.schemas import OrderIn
 from app.services.broker import Broker, BrokerError, SubmitLeg, SubmitRequest
-from app.services.ledger import TERMINAL_STATUSES, ensure_affordable, ensure_closable
+from app.services.ledger import (
+    TERMINAL_STATUSES,
+    debit_cost,
+    ensure_closable,
+    locked,
+    release_reservation,
+    reserve_cash,
+)
 
 
 def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool]:
-    strategy = db.get(Strategy, data.strategy_id)
+    # Strategy first, then the new order, so this cannot deadlock with sync.
+    strategy = db.scalar(locked(db, select(Strategy).where(Strategy.id == data.strategy_id), Strategy))
     if strategy is None:
         raise AppError(404, "unknown strategy")
 
@@ -21,8 +29,8 @@ def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool
         if existing is not None:
             return existing, False
 
-    ensure_affordable(strategy, data)
     ensure_closable(db, strategy, data)
+    cost = debit_cost(data)
 
     order = Order(
         id=str(uuid.uuid4()),
@@ -64,6 +72,9 @@ def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool
                 return existing, False
         raise
 
+    if cost is not None:
+        reserve_cash(db, strategy, order, cost)
+
     request = SubmitRequest(
         client_order_id=order.id,
         order_class=order.order_class,
@@ -71,16 +82,16 @@ def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool
         symbol=order.symbol,
         side=order.side,
         type=order.type,
-        qty=order.qty,
-        limit_price=order.limit_price,
-        stop_price=order.stop_price,
+        qty=float(order.qty),
+        limit_price=None if order.limit_price is None else float(order.limit_price),
+        stop_price=None if order.stop_price is None else float(order.stop_price),
         time_in_force=order.time_in_force,
         position_intent=order.position_intent,
         notional=data.notional,
         legs=[
             SubmitLeg(
                 symbol=leg.symbol,
-                ratio_qty=leg.ratio_qty,
+                ratio_qty=float(leg.ratio_qty),
                 side=leg.side,
                 position_intent=leg.position_intent,
             )
@@ -93,6 +104,8 @@ def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool
         order.status = "rejected"
         order.reject_reason = str(exc)[:500]
         order.updated_at = utcnow()
+        if cost is not None:
+            release_reservation(db, strategy, order)
         db.commit()
         raise AppError(502, str(exc)) from exc
 
@@ -104,14 +117,25 @@ def place_order(db: Session, broker: Broker, data: OrderIn) -> tuple[Order, bool
 
 
 def cancel_order(db: Session, broker: Broker, order_id: str) -> Order:
-    order = db.scalar(select(Order).where(Order.id == order_id).options(selectinload(Order.legs)))
-    if order is None:
+    strategy_id = db.scalar(select(Order.strategy_id).where(Order.id == order_id))
+    if strategy_id is None:
+        raise AppError(404, "order not found")
+    strategy = db.scalar(locked(db, select(Strategy).where(Strategy.id == strategy_id), Strategy))
+    order = db.scalar(
+        locked(
+            db,
+            select(Order).where(Order.id == order_id).options(selectinload(Order.legs)),
+            Order,
+        )
+    )
+    if strategy is None or order is None:
         raise AppError(404, "order not found")
     if order.status in TERMINAL_STATUSES:
         raise AppError(400, f"order is {order.status}")
     if not order.alpaca_order_id:
         order.status = "canceled"
         order.updated_at = utcnow()
+        release_reservation(db, strategy, order)
         db.commit()
         return order
     try:

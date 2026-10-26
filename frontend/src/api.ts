@@ -4,6 +4,7 @@ export type Strategy = {
   id: string;
   cash_budget: number;
   cash_remaining: number;
+  cash_reserved: number;
   realized_pnl: number;
   unrealized_pnl: number | null;
   created_at: string;

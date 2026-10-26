@@ -3,8 +3,9 @@ import contextlib
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.config import Settings
 from app.database import make_engine, make_session_factory
@@ -20,9 +21,15 @@ def create_app(settings: Settings | None = None, broker: Broker | None = None) -
     settings = settings or Settings()
     if broker is None:
         broker = AlpacaBroker(settings)
-    engine = make_engine(settings.oms_database_url)
+    engine = make_engine(
+        settings.oms_database_url,
+        pool_size=settings.oms_db_pool_size,
+        max_overflow=settings.oms_db_max_overflow,
+    )
     session_factory = make_session_factory(engine)
-    Base.metadata.create_all(engine)
+    # Postgres schema lives in supabase_schema.sql. create_all is the test database only.
+    if engine.dialect.name == "sqlite":
+        Base.metadata.create_all(engine)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -63,7 +70,16 @@ def create_app(settings: Settings | None = None, broker: Broker | None = None) -
 
     @app.get("/api/health", tags=["system"])
     def health():
-        return {"status": "ok"}
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+        except Exception as exc:
+            logger.exception("database health check failed")
+            raise HTTPException(status_code=503, detail="database unavailable") from exc
+        return {
+            "status": "ok",
+            "database": "postgres" if engine.dialect.name == "postgresql" else "sqlite",
+        }
 
     @app.get("/", include_in_schema=False)
     def root():

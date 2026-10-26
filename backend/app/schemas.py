@@ -32,6 +32,7 @@ class StrategyOut(BaseModel):
     id: str
     cash_budget: float
     cash_remaining: float
+    cash_reserved: float = 0
     realized_pnl: float
     unrealized_pnl: float | None = None
     created_at: datetime

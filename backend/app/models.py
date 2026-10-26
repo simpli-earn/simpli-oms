@@ -1,11 +1,18 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.types import JSON
 
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# Fractional equity fills need more than money's usual 4 places. 10 covers
+# Alpaca notionals and the 9-place share quantities already stored locally.
+AMOUNT = Numeric(24, 10)
 
 
 class Base(DeclarativeBase):
@@ -16,9 +23,10 @@ class Strategy(Base):
     __tablename__ = "strategies"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    cash_budget: Mapped[float] = mapped_column(Float)
-    cash_remaining: Mapped[float] = mapped_column(Float)
-    realized_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    cash_budget: Mapped[Decimal] = mapped_column(AMOUNT)
+    cash_remaining: Mapped[Decimal] = mapped_column(AMOUNT)
+    cash_reserved: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    realized_pnl: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     positions: Mapped[list["StrategyPosition"]] = relationship(back_populates="strategy")
@@ -38,15 +46,16 @@ class Order(Base):
     symbol: Mapped[str | None] = mapped_column(String(32), nullable=True)
     side: Mapped[str | None] = mapped_column(String(8), nullable=True)
     type: Mapped[str] = mapped_column(String(16))
-    qty: Mapped[float] = mapped_column(Float)
-    limit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
-    stop_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    qty: Mapped[Decimal] = mapped_column(AMOUNT)
+    limit_price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
+    stop_price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
     time_in_force: Mapped[str] = mapped_column(String(8))
     position_intent: Mapped[str | None] = mapped_column(String(16), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="pending_new", index=True)
-    filled_qty: Mapped[float] = mapped_column(Float, default=0.0)
-    filled_avg_price: Mapped[float | None] = mapped_column(Float, nullable=True)
-    applied_notional: Mapped[float] = mapped_column(Float, default=0.0)
+    filled_qty: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    filled_avg_price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
+    applied_notional: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    reserved_notional: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
     reject_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     request_payload: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -63,12 +72,12 @@ class OrderLeg(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     order_id: Mapped[str] = mapped_column(ForeignKey("orders.id"), index=True)
     symbol: Mapped[str] = mapped_column(String(32))
-    ratio_qty: Mapped[float] = mapped_column(Float)
+    ratio_qty: Mapped[Decimal] = mapped_column(AMOUNT)
     side: Mapped[str] = mapped_column(String(8))
     position_intent: Mapped[str] = mapped_column(String(16))
-    filled_qty: Mapped[float] = mapped_column(Float, default=0.0)
-    filled_avg_price: Mapped[float | None] = mapped_column(Float, nullable=True)
-    applied_notional: Mapped[float] = mapped_column(Float, default=0.0)
+    filled_qty: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    filled_avg_price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
+    applied_notional: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
 
     order: Mapped[Order] = relationship(back_populates="legs")
 
@@ -81,8 +90,8 @@ class Fill(Base):
     strategy_id: Mapped[str] = mapped_column(ForeignKey("strategies.id"), index=True)
     symbol: Mapped[str] = mapped_column(String(32), index=True)
     side: Mapped[str] = mapped_column(String(8))
-    qty: Mapped[float] = mapped_column(Float)
-    price: Mapped[float] = mapped_column(Float)
+    qty: Mapped[Decimal] = mapped_column(AMOUNT)
+    price: Mapped[Decimal] = mapped_column(AMOUNT)
     filled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     order: Mapped[Order] = relationship(back_populates="fills")
@@ -96,7 +105,28 @@ class StrategyPosition(Base):
     strategy_id: Mapped[str] = mapped_column(ForeignKey("strategies.id"), index=True)
     symbol: Mapped[str] = mapped_column(String(32), index=True)
     asset_class: Mapped[str] = mapped_column(String(16))
-    qty: Mapped[float] = mapped_column(Float, default=0.0)
-    avg_price: Mapped[float] = mapped_column(Float, default=0.0)
+    qty: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    avg_price: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
 
     strategy: Mapped[Strategy] = relationship(back_populates="positions")
+
+
+class LedgerEntry(Base):
+    """Append-only cash and position deltas.
+
+    Sum of cash_delta for a strategy equals its spendable cash_remaining.
+    Spendable cash plus cash_reserved is the settled cash. Sum of qty_delta
+    for a strategy and symbol equals that position's quantity.
+    """
+
+    __tablename__ = "ledger_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    strategy_id: Mapped[str] = mapped_column(ForeignKey("strategies.id"), index=True)
+    order_id: Mapped[str | None] = mapped_column(ForeignKey("orders.id"), nullable=True, index=True)
+    symbol: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    cash_delta: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    qty_delta: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
