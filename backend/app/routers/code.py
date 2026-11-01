@@ -11,6 +11,7 @@ import posixpath
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, inspect, select
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.deps import get_db, require_api_key
@@ -121,7 +122,17 @@ def upload_code(strategy_id: str, body: CodeUploadIn, db: Session = Depends(get_
     code.revision, code.updated_by, code.updated_at = revision, body.updated_by, now
     if "schedule" in body.model_fields_set:
         code.schedule = body.schedule
-    db.commit()
+    try:
+        db.commit()
+    except ProgrammingError as exc:
+        db.rollback()
+        if "permission denied" not in str(exc.orig):
+            raise
+        raise HTTPException(
+            status_code=503,
+            detail="the OMS database user can't remove old cloud files yet: a Supabase project owner "
+            "needs to run backend/add_strategy_code.sql again",
+        ) from exc
     return _code_out(db, code, content=False)
 
 

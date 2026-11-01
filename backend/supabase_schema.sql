@@ -179,6 +179,8 @@ create table if not exists public.strategy_files (
     primary key (strategy_id, path)
 );
 
+alter table public.strategy_files drop column if exists deleted;
+
 alter table public.strategies enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_legs enable row level security;

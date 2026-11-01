@@ -41,7 +41,7 @@ In the app, **Add strategy** → pick the OMS strategy id → then choose one:
 
 ## Versions
 
-Nothing is versioned automatically. In the app, **Versions** → **Save version** with a label and name. Saved versions can be compared with the working code, run, restored, or pinned for scheduled runs.
+An uploaded or linked strategy starts with its code saved as `v1`, used for scheduled runs; the first version you save on any strategy is used for scheduled runs if none is. After that nothing is versioned automatically. In the app, **Versions** → **Save version** with a label and name. Saved versions can be compared with the working code, run, restored, or pinned for scheduled runs.
 
 ## Setup (once)
 

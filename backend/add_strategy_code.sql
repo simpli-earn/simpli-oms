@@ -22,6 +22,9 @@ create table if not exists public.strategy_files (
     primary key (strategy_id, path)
 );
 
+-- An earlier draft of this file kept removed files as rows with deleted = true.
+alter table public.strategy_files drop column if exists deleted;
+
 alter table public.strategy_code enable row level security;
 alter table public.strategy_files enable row level security;
 revoke all on table public.strategy_code from public, anon, authenticated, service_role;

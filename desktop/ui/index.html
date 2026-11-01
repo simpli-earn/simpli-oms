@@ -622,7 +622,7 @@ function cloudRow(s) {
   if (c.state === "no_version") return `<span class="faint">Not backed up: only the version used for scheduled runs goes to the cloud</span>
     <button class="btn sm" data-versions="${sid}">Pick one</button>`;
   if (c.state === "unregistered") return '<span class="faint">Not backed up: register it in the OMS first</span>';
-  return `<span class="down" title="${esc(c.error || "")}">Backup failed</span>`;
+  return `<span class="down">Backup failed</span>${c.error ? ` <span class="muted" style="flex-basis:100%;font-size:12.5px">${esc(c.error)}</span>` : ""}`;
 }
 function card(s) {
   const b = state.books[s.strategy_id] || {};
@@ -951,7 +951,7 @@ oms.rebalance(target, latest_prices(set(target) | set(oms.holdings())))</pre>
 <p>Only the finished code that runs is backed up: the saved version you pick with <b>Use for schedule</b> in Versions. Drafts in the working file and your other saved versions stay on this laptop, and a strategy with no scheduled version isn't backed up. While the app is open and the OMS is running, that version is uploaded to the shared OMS database along with <code>strategy.json</code>, <code>models/</code>, and the schedule's time and days. Each card's <b>Cloud</b> row shows whether it's backed up. <code>runs/</code>, run history, and files over 10 MB stay on this laptop. A downloaded strategy gets that version as its working code, already picked for scheduled runs. Everyone on the team can download every strategy. Strategies that are in the cloud but not on this laptop are listed under <b>In the cloud</b> on My strategies, so after a reinstall you click <b>Download</b> and turn its schedule back on. If someone else changes a strategy, its card offers <b>Update</b>. If it changed on both laptops, choose <b>Keep mine</b> or <b>Use cloud's</b>.</p>
 
 <h2>Versions</h2>
-<p>Nothing is tracked automatically. When the code is in a state you want to keep, open <b>Versions</b> and <b>Save current code</b> with a label (<code>v1</code>, <code>2.0</code>…) and a name. The app copies the file into <code>strategies/&lt;id&gt;/versions/</code>. From there you can compare it with the working code, run it, restore it, or pin it so scheduled runs use that exact code while you keep editing. Every run in the history shows the version it ran (<i>working</i> = unsaved changes). For notebooks only code cells count, so running a notebook doesn't make it look modified.</p>
+<p>A strategy made from an uploaded or linked file starts with its code saved as <code>v1</code>, used for scheduled runs. After that nothing is tracked automatically, and if no version is used for scheduled runs, the first one you save becomes it. When the code is in a state you want to keep, open <b>Versions</b> and <b>Save current code</b> with a label (<code>v1</code>, <code>2.0</code>…) and a name. The app copies the file into <code>strategies/&lt;id&gt;/versions/</code>. From there you can compare it with the working code, run it, restore it, or pin it so scheduled runs use that exact code while you keep editing. Every run in the history shows the version it ran (<i>working</i> = unsaved changes). For notebooks only code cells count, so running a notebook doesn't make it look modified.</p>
 
 <h2>Statuses</h2>
 <table class="panel"><tbody>

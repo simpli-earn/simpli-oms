@@ -268,6 +268,8 @@ def create_strategy(sid: str, origin: str, title: str = "", file: str | None = N
     manifest = {"strategy_id": sid, "title": title.strip() or None, "source": source, "origin": origin,
                 "scheduled_version": None, "versions": [], "created_at": now()}
     write_manifest(sid, manifest)
+    if origin in ("upload", "link"):  # real code from the start: save it as v1, used for scheduled runs
+        save_version(sid, "v1", "First version")
     return describe(sid)
 
 
@@ -287,7 +289,8 @@ def next_label(sid: str) -> str:
 
 
 def save_version(sid: str, label: str, name: str, note: str = "") -> dict:
-    """Snapshot the current code as a version you name. Nothing is saved automatically."""
+    """Snapshot the current code as a version you name. The first version saved while no version
+    is picked for scheduled runs becomes the scheduled one (and so the one backed up to the cloud)."""
     label = label.strip()
     if not VALID_LABEL.fullmatch(label):
         raise ValueError("Version label: letters, numbers, dots, dashes (e.g. v3 or 2.1)")
@@ -308,6 +311,8 @@ def save_version(sid: str, label: str, name: str, note: str = "") -> dict:
     shutil.copy2(src, folder(sid) / rel)
     v = {"label": label, "name": name.strip(), "note": note.strip(), "file": rel, "hash": h, "created_at": now()}
     m.setdefault("versions", []).append(v)
+    if not m.get("scheduled_version"):
+        m["scheduled_version"] = label
     write_manifest(sid, m)
     return v
 
