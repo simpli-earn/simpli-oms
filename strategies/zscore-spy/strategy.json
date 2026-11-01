@@ -1,0 +1,12 @@
+{
+  "strategy_id": "zscore-spy",
+  "title": null,
+  "source": {
+    "kind": "local",
+    "file": "zscore_spy.ipynb"
+  },
+  "origin": "template_ipynb",
+  "scheduled_version": null,
+  "versions": [],
+  "created_at": "2026-10-26T19:40:00+00:00"
+}

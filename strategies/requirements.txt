@@ -1,0 +1,9 @@
+jupyterlab
+ipykernel
+requests
+pandas
+alpaca-py
+python-dotenv
+xgboost
+scikit-learn
+psycopg[binary]

@@ -1,0 +1,1623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SimpliEarn Desk</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #050505; --fg: #f5f5f5; --muted: #9aa0a6; --faint: #5f6468;
+    --brand: #6fd98a; --brand-ink: #07140c; --surface: #0f1211; --surface-2: #151918;
+    --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.14);
+    --bad: #e06b6b; --warn: #e4b45f; --info: #7fb6ff;
+    --grade-green: #6fd98a; --grade-yellow: #e8d35a; --grade-orange: #ec9450; --grade-red: #e06b6b;
+    --radius: 14px;
+    font-family: "Urbanist", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    color: var(--fg); background: var(--bg);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); }
+  body { font-size: 14px; -webkit-font-smoothing: antialiased; user-select: none; }
+  button, input, select { font: inherit; color: inherit; }
+  h1, h2 { margin: 0; font-weight: 300; letter-spacing: -.03em; }
+  h1 { font-size: 34px; line-height: 1.05; }
+  h2 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
+  a { color: var(--brand); text-decoration: none; cursor: pointer; }
+  a:hover { color: #91e8a7; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .muted { color: var(--muted); }
+  .faint { color: var(--faint); }
+  .num { font-variant-numeric: tabular-nums; }
+  td.num, th.num { text-align: right; }
+  .up { color: var(--brand); } .down { color: var(--bad); }
+
+  /* shell: same sidebar layout as the web dashboard */
+  .shell { display: grid; grid-template-columns: 224px minmax(0, 1fr); height: 100vh; }
+  aside.rail { display: flex; flex-direction: column; gap: 28px; padding: 26px 16px 20px; border-right: 1px solid var(--border); background: #070808; }
+  .brand { padding: 4px 10px; }
+  .brand span { display: block; color: var(--brand); font-size: 26px; font-weight: 300; letter-spacing: -.06em; }
+  .brand small { display: block; margin-top: 2px; font-size: 11px; font-weight: 300; letter-spacing: .08em; text-transform: uppercase; }
+  nav { display: flex; flex-direction: column; gap: 4px; }
+  nav a { padding: 9px 11px; border-radius: 10px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+  nav a.active { color: var(--brand-ink); background: var(--brand); font-weight: 500; }
+  nav a:hover:not(.active) { color: var(--fg); background: var(--surface-2); }
+  nav .sep { height: 1px; background: var(--border); margin: 8px 6px; }
+  nav small { font-size: 11px; opacity: .7; }
+  .rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .rail-foot .svc { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .rail-foot .btn { width: 100%; justify-content: center; }
+  main { overflow-y: auto; padding: 30px 34px 60px; }
+  .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 22px; }
+  .page-head p { margin: 8px 0 0; color: var(--muted); max-width: 640px; line-height: 1.45; }
+  .back { display: inline-block; margin-bottom: 12px; color: var(--muted); font-size: 13px; }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
+  .dot.on { background: var(--brand); box-shadow: 0 0 0 3px rgba(111,217,138,.15); }
+  .dot.busy { background: var(--warn); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  .card, .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .panel { margin-bottom: 16px; overflow: hidden; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .panel-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .panel-body { padding: 16px 18px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px; border-radius: 9px;
+         border: 1px solid var(--border-strong); background: var(--surface-2); cursor: pointer; white-space: nowrap; }
+  .btn:hover:not(:disabled) { border-color: rgba(255,255,255,.28); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-weight: 600; }
+  .btn.primary:hover:not(:disabled) { background: #86e39d; }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); padding: 0 8px; }
+  .btn.ghost:hover:not(:disabled) { color: var(--fg); }
+  .btn.danger { color: var(--bad); }
+  .btn.sm { height: 26px; padding: 0 9px; font-size: 12.5px; border-radius: 7px; }
+  .btn:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid rgba(111,217,138,.5); outline-offset: 2px; }
+
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 28px 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; }
+
+  .strat { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  .strat-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .strat-title { font-size: 17px; font-weight: 500; line-height: 1.3; }
+  .strat-money { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .strat-money label { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .strat-money strong { display: block; font-size: 30px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
+  .strat-money .ret { text-align: right; }
+  .strat-money .ret strong { font-size: 22px; font-weight: 400; }
+  .strat-money .ret span { display: block; font-size: 12.5px; margin-top: 5px; }
+  .strat-small { margin-top: 12px; color: var(--muted); font-size: 13px; }
+
+  /* statistics: volatility, beta, alpha vs SPY, each graded green / yellow / orange / red */
+  .g-green { color: var(--grade-green); } .g-yellow { color: var(--grade-yellow); }
+  .g-orange { color: var(--grade-orange); } .g-red { color: var(--grade-red); }
+  .qhelp { position: relative; display: inline-flex; text-transform: none; letter-spacing: 0; }
+  .qhelp > button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--muted); font-size: 11px; line-height: 1; cursor: pointer; padding: 0; }
+  .qhelp > button:hover { color: var(--fg); }
+  .qhelp .pop { display: none; position: absolute; z-index: 30; top: 24px; left: 0; width: 380px; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 12px; background: #111514; box-shadow: 0 12px 30px rgba(0,0,0,.5); font-size: 12.5px; color: var(--fg); }
+  .qhelp:hover .pop, .qhelp:focus-within .pop { display: block; }
+  .pop table { width: 100%; border-collapse: collapse; }
+  .pop th, .pop td { padding: 5px 6px; text-align: left; font-weight: 400; border: 0; white-space: nowrap; }
+  .pop th { font-size: 11px; }
+  .pop p { margin: 8px 0 0; color: var(--muted); font-size: 11.5px; white-space: normal; }
+  .risk-table td .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; background: currentColor; }
+  .facts { display: grid; grid-template-columns: 80px 1fr; gap: 14px 16px; margin: 0; padding: 18px 0; font-size: 13.5px;
+           border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); align-items: center; }
+  .facts dt { color: var(--faint); }
+  .facts dd { margin: 0; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .strat-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .strat-actions .spacer { flex: 1; }
+  .strat-links { display: flex; gap: 18px; margin-top: -6px; }
+  .linkish { background: none; border: 0; padding: 0; color: var(--muted); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  .linkish:hover:not(:disabled) { color: var(--fg); }
+  .linkish:disabled { opacity: .45; cursor: default; }
+  .strat-sub { margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; background: #1a2820; color: var(--brand); font-size: 11.5px; white-space: nowrap; }
+  .chip.off { background: #1c1e1e; color: var(--muted); }
+  .chip.local { background: #14202e; color: var(--info); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .stat span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .stat strong { font-size: 20px; font-weight: 400; font-variant-numeric: tabular-nums; }
+
+  .hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding: 24px; margin-bottom: 16px; }
+  .eyebrow { color: var(--brand); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .hero strong.big { display: block; margin: 10px 0 6px; font-size: 44px; font-weight: 300; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .hero-meta { display: flex; gap: 34px; }
+  .hero-meta span { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .hero-meta strong { font-weight: 400; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .two { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+  .balances { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 18px; }
+  .balances span { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .balances strong { font-weight: 400; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .big-count { display: flex; align-items: baseline; gap: 10px; padding: 4px 18px 18px; }
+  .big-count strong { font-size: 34px; font-weight: 300; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 11.5px;
+           font-weight: 500; background: #1c1e1e; color: var(--muted); white-space: nowrap; }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge.succeeded, .badge.filled { background: #12251a; color: var(--brand); }
+  .badge.failed, .badge.interrupted, .badge.rejected { background: #2a1616; color: var(--bad); }
+  .badge.running, .badge.queued, .badge.accepted, .badge.new, .badge.pending_new, .badge.partially_filled, .badge.pending_cancel { background: #2a2314; color: var(--warn); }
+  .badge.running::before, .badge.queued::before { animation: pulse 1s ease-in-out infinite; }
+  .badge.plan_only, .badge.skipped, .badge.stopped, .badge.canceled, .badge.expired { background: #14202e; color: var(--info); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { color: var(--faint); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr.link { cursor: pointer; }
+  tbody tr.link:hover td { background: rgba(255,255,255,.02); }
+  .summary-cell { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty { padding: 28px; text-align: center; color: var(--muted); }
+  .banner { padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(224,107,107,.35); background: #1d1111; color: #f2b3b3; margin-bottom: 14px; }
+  .banner.info { border-color: rgba(127,182,255,.3); background: #0e1621; color: #bcd6ff; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  label.f { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12px; }
+  label.f input, label.f select { height: 36px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--fg); font-size: 14px; user-select: text; }
+  .segmented { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 18px; }
+  .segmented button { border: 0; background: transparent; padding: 6px 14px; border-radius: 8px; color: var(--muted); cursor: pointer; }
+  .segmented button.on { background: var(--brand); color: var(--brand-ink); font-weight: 600; }
+  .legs { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .leg { display: grid; grid-template-columns: 2fr 1fr 1.4fr; gap: 12px; }
+  .ticket-foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; z-index: 20; }
+  .scrim.open { display: block; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(720px, 92vw); background: #0b0d0c; border-left: 1px solid var(--border-strong);
+            z-index: 21; transform: translateX(100%); transition: transform 200ms ease; display: flex; flex-direction: column; }
+  .drawer.open { transform: none; }
+  .drawer-head { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .drawer-head .actions { flex: none; flex-wrap: nowrap; align-self: flex-start; }
+  .drawer pre { margin: 0; padding: 18px 22px; overflow: auto; flex: 1; white-space: pre; user-select: text;
+                font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; line-height: 1.5; color: #cfd4d8; }
+
+  .modal { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(480px, 92vw); z-index: 21;
+           background: #0d100f; border: 1px solid var(--border-strong); border-radius: 16px; padding: 22px; display: none; }
+  .modal.open { display: block; }
+  .field { margin-top: 16px; }
+  .field > label.lbl { display: block; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  input[type=time] { height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface-2); font-size: 16px; }
+  .days { display: flex; gap: 6px; }
+  .day { width: 38px; height: 34px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface-2); cursor: pointer; font-size: 12.5px; }
+  .day.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); font-weight: 600; }
+  .switch { display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--fg); font-size: 14px; }
+  .switch input { width: 18px; height: 18px; accent-color: var(--brand); }
+  .note { margin-top: 16px; font-size: 12.5px; line-height: 1.5; color: var(--muted); background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #1a1d1c; border: 1px solid var(--border-strong);
+           border-radius: 10px; padding: 10px 14px; z-index: 30; display: none; max-width: 80vw; }
+  .toast.show { display: block; }
+  .toast.err { border-color: rgba(224,107,107,.5); color: #f2b3b3; }
+
+  .strat-head { flex-direction: row; justify-content: space-between; }
+  .strat-head .head-main { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
+  .menu-wrap { position: relative; display: inline-flex; }
+  .menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 15; min-width: 210px; display: none; padding: 6px;
+          background: #141716; border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+  .menu.left { right: auto; left: 0; }
+  .menu.open { display: block; }
+  .menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px;
+                 background: transparent; text-align: left; cursor: pointer; font-size: 13px; }
+  .menu button:hover:not(:disabled) { background: var(--surface-2); }
+  .menu button:disabled { opacity: .4; cursor: default; }
+  .menu .info { padding: 8px 10px; width: 320px; }
+  .menu .info dl { display: grid; grid-template-columns: 74px 1fr; gap: 7px 10px; margin: 0; font-size: 12.5px; }
+  .menu .info dt { color: var(--faint); }
+  .menu .info dd { margin: 0; word-break: break-all; user-select: text; }
+  .icon-btn { width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 50%; color: var(--muted); }
+  .icon-btn:hover { color: var(--fg); }
+  /* value-over-time chart */
+  .chart-panel .panel-head { flex-wrap: wrap; }
+  .chart-head-num strong { font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; }
+  .chart-head-num span { margin-left: 8px; font-size: 13px; }
+  .ranges { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); }
+  .ranges button { border: 0; background: transparent; color: var(--muted); padding: 4px 10px; border-radius: 7px; font-size: 12px; cursor: pointer; }
+  .ranges button.on { background: #24302a; color: var(--fg); font-weight: 600; }
+  .chart { position: relative; padding: 10px 14px 6px; transition: opacity 150ms ease; }
+  .chart.loading { opacity: .45; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart .tip { position: absolute; pointer-events: none; background: #141716; border: 1px solid var(--border-strong); border-radius: 9px;
+                padding: 7px 10px; font-size: 12px; white-space: nowrap; display: none; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+  .chart .tip strong { display: block; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chart .tip .k { display: inline-block; width: 12px; height: 2px; background: var(--brand); vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+  .chart .msg { height: 220px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+  .chart-table summary { cursor: pointer; color: var(--muted); font-size: 12.5px; padding: 0 18px 12px; }
+  .chart-table .scroll-t { max-height: 220px; overflow-y: auto; border-top: 1px solid var(--border); }
+  .removed-row td { color: var(--muted); }
+  .chip.removed { background: #2a1b1b; color: #e9a3a3; }
+  .btn.compact { padding: 0 10px; font-size: 12.5px; }
+  /* sortable tables: click a header to sort ascending, again for descending, a third time to reset */
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { color: var(--muted); }
+  th.sortable::after { content: ""; display: inline-block; width: 10px; margin-left: 4px; font-size: 9px; }
+  th.sort-asc::after { content: "▲"; color: var(--brand); }
+  th.sort-desc::after { content: "▼"; color: var(--brand); }  /* same height as the icon buttons, less width */
+  .btn.icon-sq { width: 34px; padding: 0; justify-content: center; color: var(--muted); }
+  .btn.icon-sq:hover:not(:disabled) { color: var(--fg); }
+  .btn.icon-sq svg { width: 17px; height: 17px; }
+  .btn.icon-sq.on { color: var(--brand); border-color: rgba(111,217,138,.45); }
+  .btn.play { width: 42px; padding: 0; justify-content: center; }
+  .btn.play svg { width: 14px; height: 14px; }
+
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand svg { width: 38px; height: 38px; flex: none; }
+  .brand span { font-size: 22px; }
+  .src { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; min-width: 0; }
+  .src .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  .checks { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+  .checks .error { color: var(--bad); } .checks .warn { color: var(--warn); }
+  .vstate { font-size: 13px; }
+  .vstate b { font-weight: 500; }
+  .vstate.mod { color: var(--warn); }
+
+  .drawer.wide { width: min(820px, 94vw); }
+  .drawer .scroll { overflow-y: auto; flex: 1; padding: 18px 22px 30px; user-select: text; }
+  .vform { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: end; }
+  .vform .full { grid-column: 1 / -1; }
+  .vsummary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .vtile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .vtile label { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .vtile b { font-weight: 500; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
+  .warnc { color: var(--warn); }
+  .vsave h2 { margin: 0 0 14px; font-size: 15px; }
+  .vhist-title { margin: 28px 0 14px; font-size: 15px; }
+  .vtimeline { position: relative; padding-left: 22px; }
+  .vtimeline::before { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: var(--border-strong); border-radius: 2px; }
+  .vrow { position: relative; padding: 0 0 26px; }
+  .vrow::before { content: ""; position: absolute; left: -22px; top: 5px; width: 12px; height: 12px; border-radius: 50%;
+                  background: #0b0d0c; border: 2px solid var(--border-strong); box-sizing: border-box; }
+  .vrow.current::before { background: var(--brand); border-color: var(--brand); }
+  .vrow-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .vname { font-weight: 500; font-size: 14.5px; }
+  .vdate { margin-left: auto; font-size: 12.5px; }
+  .vnote { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .vrow-actions { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-top: 12px; }
+  .vrow-actions .btn + .linkish { margin-left: 6px; }
+  .linkish.danger { color: var(--bad); opacity: .8; }
+  .diff { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; background: #080a09; padding: 10px 0; overflow-x: auto;
+          font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; line-height: 1.55; white-space: pre; }
+  .diff div { padding: 0 14px; }
+  .diff .add { background: rgba(111,217,138,.10); color: #a9efbb; }
+  .diff .del { background: rgba(224,107,107,.10); color: #f2b3b3; }
+  .diff .hunk { color: var(--info); }
+  .danger-zone { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  .modal.big { width: min(620px, 94vw); max-height: 92vh; overflow-y: auto; }
+  .choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .choice { border: 1px solid var(--border-strong); border-radius: 12px; padding: 12px; cursor: pointer; background: var(--surface-2); text-align: left; }
+  .choice b { display: block; font-weight: 500; margin-bottom: 4px; }
+  .choice span { color: var(--muted); font-size: 12px; line-height: 1.4; }
+  .choice.on { border-color: var(--brand); background: #102017; }
+  .picked { margin-top: 10px; display: flex; gap: 10px; align-items: center; }
+  .help { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+  .help code, .needs code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+  .needs { margin-top: 16px; border: 1px solid rgba(111,217,138,.3); background: #0d1a12; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
+  .needs ol { margin: 6px 0 8px; padding-left: 20px; color: #cfd4d8; }
+  .needs li { margin: 2px 0; }
+
+  .guide { max-width: 860px; line-height: 1.6; user-select: text; }
+  .guide h2 { margin: 30px 0 10px; font-size: 19px; }
+  .guide p, .guide li { color: #cfd4d8; }
+  .guide ul, .guide ol { padding-left: 20px; }
+  .guide code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+  .guide pre { background: #080a09; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; overflow-x: auto;
+               font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; line-height: 1.55; color: #cfd4d8; }
+  .guide table td, .guide table th { padding: 8px 10px; }
+  .guide .callout { border: 1px solid rgba(111,217,138,.3); background: #0d1a12; border-radius: 12px; padding: 14px 16px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#17201b"/><stop offset="1" stop-color="#050605"/></linearGradient></defs>
+        <rect x="2" y="2" width="96" height="96" rx="24" fill="url(#lg)" stroke="rgba(255,255,255,.1)"/>
+        <polyline points="17,72 39,50 56,60 85,28" fill="none" stroke="#6fd98a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="85" cy="28" r="8.5" fill="#6fd98a"/><circle cx="85" cy="28" r="3.5" fill="#08140c"/>
+      </svg>
+      <div><span>SimpliEarn</span><small>Desk · Paper OMS</small></div>
+    </div>
+    <nav id="nav">
+      <a data-nav="desk" href="#/desk">My strategies <small id="nav-local"></small></a>
+      <a data-nav="guide" href="#/guide">Strategy guide</a>
+      <div class="sep"></div>
+      <a data-nav="account" href="#/account">Account</a>
+      <a data-nav="strategies" href="#/strategies">Strategies</a>
+      <a data-nav="order" href="#/order">New order</a>
+    </nav>
+    <div class="rail-foot">
+      <div class="svc"><span class="dot" id="dot-backend"></span>OMS backend</div>
+      <div class="svc"><span class="dot" id="dot-frontend"></span>Web dashboard</div>
+      <button class="btn primary" id="oms-toggle">Start OMS</button>
+      <button class="btn ghost" id="open-dash" disabled>Open web dashboard</button>
+    </div>
+  </aside>
+  <main id="view"></main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer" id="drawer" aria-label="Run log">
+  <div class="drawer-head">
+    <div>
+      <h2 id="log-title">Run</h2>
+      <div class="muted" id="log-sub" style="margin-top:6px"></div>
+    </div>
+    <div class="actions">
+      <button class="btn danger" id="log-stop" hidden>Stop run</button>
+      <button class="btn" id="log-reveal">Show notebook</button>
+      <button class="btn ghost" id="log-close">Close</button>
+    </div>
+  </div>
+  <pre id="log-text"></pre>
+</aside>
+
+<div class="modal" id="sched" role="dialog" aria-label="Schedule">
+  <h2 id="sched-title">Schedule</h2>
+  <div class="field"><label class="switch"><input type="checkbox" id="sched-enabled" /> Run automatically</label></div>
+  <div class="field">
+    <label class="lbl" for="sched-time">Time on this laptop</label>
+    <input type="time" id="sched-time" value="15:40" />
+    <span class="muted" id="sched-et" style="margin-left:10px"></span>
+  </div>
+  <div class="field"><label class="lbl">Days</label><div class="days" id="sched-days"></div></div>
+  <div class="field"><label class="f">Scheduled runs use<select id="sched-version"></select></label></div>
+  <div class="note">Runs through macOS even when this app is closed. If the laptop is asleep at that time, it runs once on wake; if it is shut down, that day is skipped. The strategy itself decides what to do when the market is closed.</div>
+  <div class="modal-actions">
+    <button class="btn ghost" data-close>Cancel</button>
+    <button class="btn primary" id="sched-save">Save</button>
+  </div>
+</div>
+
+<div class="modal big" id="newstrat" role="dialog" aria-label="New strategy">
+  <h2>Add a strategy</h2>
+  <div class="field">
+    <label class="f">OMS strategy
+      <select id="ns-id"></select>
+    </label>
+    <p class="help">Every order is tagged with this id, and it can only spend this strategy's cash.</p>
+    <div id="ns-register" class="fields" style="margin-top:10px;display:none">
+      <label class="f">New strategy id (unique across the team)<input id="ns-new-id" placeholder="ishan-momentum" /></label>
+      <label class="f">Cash budget<input id="ns-budget" value="1000" inputmode="decimal" /></label>
+    </div>
+  </div>
+  <div class="field">
+    <label class="lbl">Code</label>
+    <div class="choice-grid">
+      <button class="choice on" data-origin="template"><b>Start from template</b><span>A ready-to-fill file stored in the app folder.</span></button>
+      <button class="choice" data-origin="link"><b>Link a file</b><span>Runs your file where it is. Every run uses its latest saved version.</span></button>
+      <button class="choice" data-origin="upload"><b>Upload a copy</b><span>Copies your file into the app folder. Edit it there from then on.</span></button>
+    </div>
+    <div class="picked" id="ns-template-kind">
+      <div class="segmented" style="margin:0"><button type="button" class="on" data-kind="py">Python script (.py)</button><button type="button" data-kind="ipynb">Notebook (.ipynb)</button></div>
+    </div>
+    <div class="picked" id="ns-file-row" style="display:none">
+      <button class="btn" id="ns-choose">Choose file…</button><span class="mono muted" id="ns-file">No file chosen</span>
+    </div>
+    <p class="help" id="ns-hint"></p>
+  </div>
+  <div class="needs">
+    <b>Your code needs 3 lines</b>
+    <ol>
+      <li><code>oms = OMS()</code> connects. The app fills in the id.</li>
+      <li><code>target = {"SPY": 0.5, "QQQ": 0.5}</code> is your signal: the share of this strategy's cash per stock. Leftover stays cash; anything held but not listed gets sold.</li>
+      <li><code>oms.rebalance(target, prices)</code> sells, then buys to match.</li>
+    </ol>
+    <span class="muted">Try <b>Test run</b> first: it prints the orders without sending them. <a href="#/guide" data-close>Full guide</a></span>
+  </div>
+  <div class="field"><label class="f">Display name (optional; otherwise taken from the code)<input id="ns-title" placeholder="Momentum top 10" /></label></div>
+  <div class="modal-actions">
+    <button class="btn ghost" data-close>Cancel</button>
+    <button class="btn primary" id="ns-create">Add strategy</button>
+  </div>
+</div>
+
+<aside class="drawer wide" id="vdrawer" aria-label="Versions">
+  <div class="drawer-head">
+    <div><h2 id="v-title">Versions</h2><div class="muted" id="v-sub" style="margin-top:6px"></div></div>
+    <div class="actions"><button class="btn ghost" data-close>Close</button></div>
+  </div>
+  <div class="scroll" id="v-body"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const api = () => window.pywebview.api;
+const DAYS = [[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"],[7,"Sun"]];
+const TERMINAL = ["filled", "canceled", "expired", "rejected", "replaced"];
+let state = { oms: {}, strategies: [], runs: [], books: {}, stats: {} };
+let openRunId = null, schedNotebook = null, schedDays = new Set();
+let openMenu = null; // "info:<id>" or "open:<id>": card menus survive the 2-second re-render
+const ORIGIN = { template_py: "from template", template_ipynb: "from template", upload: "uploaded copy", link: "linked file" };
+const TEST_RUN_TIP = "Test run: runs the strategy end to end but only prints the orders it would place. Nothing is sent to the OMS or Alpaca.";
+let current = { name: null, arg: null, timer: null };
+
+// formatting (same rules as the web dashboard)
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = (v) => v == null || isNaN(v) ? "—" : Number(v).toLocaleString("en-US", { style: "currency", currency: "USD" });
+const shares = (v) => v == null || isNaN(v) ? "—" : Number(v).toLocaleString("en-US", { maximumFractionDigits: 4 });
+const price = (v) => v == null || isNaN(v) ? "—" : Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+const tone = (v) => v == null || v === 0 ? "" : v > 0 ? "up" : "down";
+const when = (v) => new Date(v).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const signed = (v) => v == null ? "—" : (v >= 0 ? "+" : "-") + "$" + Math.abs(v).toFixed(2);
+const pct = (v) => v == null || isNaN(v) ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2) + "%";
+const GRADE_WORD = { green: "Good", yellow: "Okay", orange: "Weak", red: "Poor" };
+const STATS = {  // `ranges` = green, yellow, orange, red, shown in the ? overview
+  volatility: { label: "Volatility", fmt: (v) => v.toFixed(1) + "%", base: (x) => x.benchmark_volatility.toFixed(1) + "%",
+    ranges: ["≤ SPY", "≤ 1.25× SPY", "≤ 1.6× SPY", "higher"] },
+  beta: { label: "Beta", fmt: (v) => v.toFixed(2), base: () => "1.00", ranges: ["≤ 0.8", "0.8 – 1.1", "1.1 – 1.5", "> 1.5"] },
+  alpha: { label: "Alpha", fmt: (v) => pct(v), base: () => "0.00%", ranges: ["≥ +3%", "0 – 3%", "0 – −3%", "< −3%"] },
+  alpha_t: { label: "T-stat", fmt: (v) => v == null ? "—" : v.toFixed(2), base: () => "—", ranges: ["≥ 2", "1 – 2", "0 – 1", "< 0"] },
+};
+function statsHelp() {
+  const head = ["green", "yellow", "orange", "red"].map((g) => `<th class="g-${g}">${GRADE_WORD[g]}</th>`).join("");
+  return `<span class="qhelp"><button type="button" aria-label="What's good">?</button><div class="pop"><table>
+    <tr><th></th>${head}</tr>
+    ${Object.values(STATS).map((m) => `<tr><td class="muted">${m.label}</td>${m.ranges.map((r) => `<td>${r}</td>`).join("")}</tr>`).join("")}
+    </table><p>Alpha only shows Good or Poor once its t-stat is 2 or more (2+ means it's probably not luck).</p></div></span>`;
+}
+const EARLY = `<span class="chip off" title="Only a few weeks of data, so these numbers will move a lot">Early estimate</span>`;
+function statsPanel(x) {  // table for the strategy page
+  const headP = `<div class="panel-head"><div><h2 style="display:flex;align-items:center;gap:8px">Statistics ${statsHelp()}</h2><p>Compared with SPY, an S&P 500 index fund.</p></div>${x?.early ? EARLY : ""}</div>`;
+  if (!x) return `<div class="panel" style="overflow:visible">${headP}<div class="empty">Loading…</div></div>`;
+  if (!x.ready) return `<div class="panel" style="overflow:visible">${headP}<div class="empty">${esc(x.reason)}</div></div>`;
+  return `<div class="panel" style="overflow:visible">${headP}<table class="risk-table"><thead><tr><th></th><th class="num">Strategy</th><th class="num">SPY</th><th></th></tr></thead><tbody>
+    ${Object.entries(STATS).map(([k, m]) => `<tr><td>${m.label}</td><td class="num g-${x.grades[k]}"><strong>${m.fmt(x[k])}</strong></td>
+      <td class="num muted">${m.base(x)}</td><td class="g-${x.grades[k]}" style="white-space:nowrap"><span class="swatch"></span>${GRADE_WORD[x.grades[k]]}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+const pctCell = (v, extra = "") => `<td class="num ${tone(v)}">${pct(v)}${extra}</td>`;
+const label = (s) => String(s || "").replaceAll("_", " ");
+const badge = (s) => `<span class="badge ${esc(s)}">${esc(label(s))}</span>`;
+const enc = encodeURIComponent;
+
+function toast(msg, err) {
+  const t = $("toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => (t.className = "toast"), 4200);
+}
+function ago(iso) {
+  if (!iso) return "";
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  if (s < 86400) return Math.floor(s / 3600) + " h ago";
+  return when(iso);
+}
+function took(r) {
+  const end = r.finished_at ? new Date(r.finished_at) : new Date();
+  const s = Math.max(0, Math.round((end - new Date(r.started_at)) / 1000));
+  return s < 60 ? s + "s" : Math.floor(s / 60) + "m " + (s % 60) + "s";
+}
+function fmtTime(h, m) { const d = new Date(); d.setHours(h, m, 0, 0); return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
+function etOf(h, m) { const d = new Date(); d.setHours(h, m, 0, 0); return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET"; }
+function nextRun(s) {
+  if (!s || !s.enabled || !s.weekdays.length) return null;
+  const now = new Date();
+  for (let i = 0; i < 8; i++) {
+    const d = new Date(now); d.setDate(now.getDate() + i); d.setHours(s.hour, s.minute, 0, 0);
+    const wd = d.getDay() === 0 ? 7 : d.getDay();
+    if (s.weekdays.includes(wd) && d > now) return d;
+  }
+  return null;
+}
+function scheduleText(s) {
+  if (!s || !s.enabled || !s.weekdays.length) return null;
+  const wd = [...s.weekdays].sort().join(",");
+  const days = wd === "1,2,3,4,5" ? "Weekdays" : wd === "1,2,3,4,5,6,7" ? "Every day" : s.weekdays.map((d) => DAYS[d - 1][1]).join(" ");
+  return `${days} at ${fmtTime(s.hour, s.minute)}`;
+}
+const localIds = () => new Set(state.strategies.map((s) => s.strategy_id).filter(Boolean));
+const localFor = (id) => state.strategies.find((s) => s.strategy_id === id);
+
+async function oms(method, path, body) {
+  const res = await api().oms(method, path, body ?? null);
+  if (!res.ok) throw new Error(res.error || "Request failed");
+  return res.data;
+}
+function head(title, lede, right = "") {
+  return `<div class="page-head"><div><h1>${esc(title)}</h1>${lede ? `<p>${lede}</p>` : ""}</div>${right}</div>`;
+}
+function omsDown() {
+  return `<div class="panel"><div class="empty">The OMS isn't running, so there's nothing to show yet.<div style="margin-top:14px"><button class="btn primary" data-start-oms>Start OMS</button></div></div></div>`;
+}
+
+// ---------- OMS controls (sidebar) ----------
+function renderOms() {
+  const o = state.oms, busy = !!o.busy;
+  $("dot-backend").className = "dot" + (busy && !o.backend ? " busy" : o.backend ? " on" : "");
+  $("dot-frontend").className = "dot" + (busy && !o.frontend ? " busy" : o.frontend ? " on" : "");
+  const both = o.backend && o.frontend, ours = o.backend_ours || o.frontend_ours;
+  const btn = $("oms-toggle"); btn.title = "";
+  if (busy) { btn.textContent = o.busy[0].toUpperCase() + o.busy.slice(1) + "…"; btn.className = "btn"; btn.disabled = true; }
+  else if (both) { btn.textContent = ours ? "Stop OMS" : "Running"; btn.className = "btn"; btn.disabled = !ours;
+    if (!ours) btn.title = "Started outside this app, so it can't be stopped from here"; }
+  else { btn.textContent = "Start OMS"; btn.className = "btn primary"; btn.disabled = false; }
+  $("open-dash").disabled = !o.frontend;
+}
+async function toggleOms() {
+  const running = state.oms.backend && state.oms.frontend && (state.oms.backend_ours || state.oms.frontend_ours);
+  const busyLabel = running ? "stopping" : "starting";
+  state.oms.busy = busyLabel; renderOms();
+  const poll = setInterval(async () => { state.oms = await api().oms_status(); if (!state.oms.busy) state.oms.busy = busyLabel; renderOms(); }, 700);
+  const res = running ? await api().stop_oms() : await api().start_oms();
+  clearInterval(poll);
+  if (res.ok === false) toast(res.error, true); else toast(running ? "OMS stopped" : "OMS running");
+  state.oms = await api().oms_status(); renderOms();
+  refreshBooks(); route();
+}
+
+// ---------- My strategies (local notebooks) ----------
+const views = {};
+views.desk = {
+  interval: 2000,
+  mount() {
+    return head("My strategies", "Strategies on this laptop, each in its own folder in <span class=\"mono\">simpli-oms/strategies</span>. New to this? Read the <a href=\"#/guide\">Strategy guide</a>.",
+      `<div class="actions"><button class="btn ghost" data-folder>Open folder</button><button class="btn primary" data-new>Add strategy</button></div>`) +
+      `<div class="grid" id="cards"><div class="card empty">Loading…</div></div>
+       <div class="section-head"><h2>Run history</h2><span class="faint">Times in ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone.replace("_", " "))}</span></div>
+       <div class="panel"><table><thead><tr><th>Started</th><th>Strategy</th><th>Version</th><th>Trigger</th><th>Status</th><th>Result</th><th>Took</th></tr></thead><tbody id="runs"></tbody></table></div>`;
+  },
+  async update() {
+    const el = $("cards");
+    if (!el) return;
+    if (!state.strategies.length) {
+      el.innerHTML = `<div class="card empty">No strategies yet. Click <b>Add strategy</b> to start from a template, link a file, or upload one.</div>`;
+    } else el.innerHTML = state.strategies.map(card).join("");
+    $("runs").innerHTML = state.runs.length ? state.runs.map((r) => `
+      <tr class="link" data-log="${r.id}">
+        <td class="num" data-sort="${r.started_at}">${ago(r.started_at)}</td>
+        <td>${esc(r.strategy_id || r.notebook)}${r.dry_run ? ' <span class="chip off">test</span>' : ""}</td>
+        <td>${r.version ? `<span class="chip">${esc(r.version)}</span>` : '<span class="faint">working</span>'}</td>
+        <td class="muted">${r.trigger}</td>
+        <td>${badge(r.status)}</td>
+        <td class="summary-cell muted" title="${esc(r.summary || "")}">${esc(r.summary || "")}</td>
+        <td class="num muted">${took(r)}</td>
+      </tr>`).join("") : '<tr><td colspan="7" class="empty">No runs yet. Hit Run now on a strategy.</td></tr>';
+  },
+};
+function versionLine(s) {
+  if (!s.versions.length) return `<span class="faint">None saved</span>`;
+  if (s.matches_version) {
+    const v = s.versions.find((x) => x.label === s.matches_version);
+    return `<span class="vstate"><span class="chip">${esc(v.label)}</span> ${esc(v.name)}</span>`;
+  }
+  const last = s.versions[s.versions.length - 1];
+  return `<span class="vstate mod">Unsaved changes since ${esc(last.label)}</span>`;
+}
+function card(s) {
+  const b = state.books[s.strategy_id] || {};
+  const r = s.last_run, active = r && (r.status === "running" || r.status === "queued");
+  const st = scheduleText(s.schedule), nxt = nextRun(s.schedule);
+  const errors = s.checks.filter((c) => c.level === "error");
+  const sid = esc(s.strategy_id);
+  // the title often repeats the id ("zscore-spy: pooled …"); the chip already shows it
+  let title = s.title || s.strategy_id;
+  if (title.toLowerCase().startsWith(s.strategy_id.toLowerCase() + ":")) title = title.slice(s.strategy_id.length + 1).trim();
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+  const money_ = b.registered
+    ? `<div class="strat-money">
+         <div><label>Equity</label><strong class="num">${money(b.equity)}</strong></div>
+         <div class="ret"><label>Total return</label><strong class="num ${tone(b.total_change)}">${pct(b.total_pct)}</strong>
+           <span class="num ${tone(b.total_change)}">${signed(b.total_change)}</span></div>
+       </div>
+       <div class="strat-small">Today <span class="num ${tone(b.day_change)}">${pct(b.day_pct)}</span> · ${money(b.cash)} cash · ${b.positions} positions</div>`
+    : `<div class="strat-money muted" style="font-size:13px">${
+        !state.oms.backend ? "Start the OMS to see this strategy's money." :
+        b.registered === false ? "Not registered in the OMS yet. Register it on the Strategies tab before a real run." : "Loading…"}</div>`;
+  const menu = (name) => (openMenu === `${name}:${s.strategy_id}` ? " open" : "");
+  const home = (p) => p.replace(/^\/Users\/[^/]+/, "~");
+  const schedRow = st
+    ? `${esc(st)}${nxt ? ` <span class="muted">· next ${nxt.toLocaleDateString(undefined, { weekday: "short" })}</span>` : ""}${
+        s.scheduled_loaded ? "" : ' <span class="down">· not loaded</span>'}`
+    : '<span class="faint">Off</span>';
+  return `<div class="card strat">
+    <div class="strat-head">
+      <div class="head-main" title="${esc(s.description || "")}">
+        <div class="strat-title">${esc(title)}</div>
+        ${b.registered ? `<a class="chip" href="#/strategy/${enc(s.strategy_id)}">${sid}</a>` : `<span class="chip">${sid}</span>`}
+      </div>
+      <div class="menu-wrap">
+        <button class="btn ghost icon-btn" data-menu="info:${sid}" title="Code and run details" aria-label="Code and run details">
+          <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 6.2v.1" stroke-linecap="round"/></svg>
+        </button>
+        <div class="menu${menu("info")}"><div class="info"><dl>
+          <dt>About</dt><dd>${esc(s.description || "—")}</dd>
+          <dt>Type</dt><dd>${s.kind === "ipynb" ? "Jupyter notebook" : "Python script"}</dd>
+          <dt>Code</dt><dd>${s.source === "linked" ? "Linked file: every run reads its latest saved version" : `Stored in the app folder (${esc(ORIGIN[s.origin] || "local")})`}</dd>
+          <dt>File</dt><dd class="mono">${esc(home(s.path))}</dd>
+          <dt>Folder</dt><dd class="mono">${esc(home(s.folder))}</dd>
+          <dt>Code hash</dt><dd class="mono">${esc(s.code_hash || "—")}</dd>
+        </dl>
+        <button class="btn sm danger" style="margin-top:12px" data-delete="${sid}">Delete strategy…</button></div></div>
+      </div>
+    </div>
+    ${s.checks.length ? `<div class="checks">${s.checks.map((c) => `<div class="${c.level}">${c.level === "error" ? "✕" : "!"} ${esc(c.msg)}</div>`).join("")}</div>` : ""}
+    <div>${money_}</div>
+    <dl class="facts">
+      <dt>Version</dt><dd>${versionLine(s)}</dd>
+      <dt>Schedule</dt><dd>${schedRow}</dd>
+      <dt>Last run</dt><dd>${r
+        ? `<button class="linkish" data-log="${r.id}" title="Open the log">${badge(r.status)}<span class="muted">${ago(r.started_at)}${r.dry_run ? " · test run" : ""}${r.version ? " · " + esc(r.version) : ""}</span></button>
+           <div class="muted" style="flex-basis:100%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.summary || "")}</div>`
+        : '<span class="faint">Never run</span>'}</dd>
+    </dl>
+    <div class="strat-actions">
+      ${active
+        ? `<button class="btn" data-log="${r.id}">View live log</button><button class="btn danger" data-stop="${r.id}">Stop</button>`
+        : `<button class="btn primary play" data-run="${sid}" ${errors.length ? "disabled" : ""} title="Run now: sends real orders to the paper account" aria-label="Run now">
+             <svg viewBox="0 0 14 14"><path d="M3 1.6v10.8a.6.6 0 0 0 .9.5l8.6-5.4a.6.6 0 0 0 0-1L3.9 1.1a.6.6 0 0 0-.9.5z" fill="currentColor"/></svg></button>
+           <button class="btn" data-dry="${sid}" ${errors.length ? "disabled" : ""} title="${TEST_RUN_TIP}">Test run</button>`}
+      <span class="spacer"></span>
+      <button class="btn compact" data-versions="${sid}">Versions</button>
+      <button class="btn icon-sq${st ? " on" : ""}" data-sched="${sid}" title="${st ? "Schedule: " + esc(st) : "Schedule automatic runs"}" aria-label="Schedule">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"/><path d="M10 6v4.2l2.8 1.8"/></svg>
+      </button>
+      <div class="menu-wrap">
+        <button class="btn icon-sq" data-menu="open:${sid}" aria-haspopup="menu" title="Open code, folder, or log" aria-label="Open">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 3.5h5v5M16.5 3.5 9.5 10.5"/><path d="M14.5 11.5v4a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h4"/></svg>
+        </button>
+        <div class="menu${menu("open")}" role="menu">
+          <button data-code="${sid}" ${s.exists ? "" : "disabled"}>${s.kind === "ipynb" ? "Code in JupyterLab" : "Code in your editor"}</button>
+          <button data-reveal="${sid}">${s.source === "linked" ? "Linked file in Finder" : "Strategy folder in Finder"}</button>
+          <button data-log="${r ? r.id : ""}" ${r ? "" : "disabled"}>Last run's log</button>
+          ${b.registered ? `<button data-href="#/strategy/${enc(s.strategy_id)}">Orders and positions</button>` : ""}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------- sortable tables ----------
+// Every table sorts by clicking a header: ascending, descending, then back to its own order.
+// Tables re-render on polls, so the choice is kept per table (keyed by its header texts) and
+// re-applied whenever a table's body is replaced.
+const sortState = {};
+const tableKey = (table) => [...(table.tHead?.rows[0]?.cells || [])].map((th) => th.textContent.trim()).join("|");
+function sortValue(td) {
+  if (!td) return null;
+  const raw = td.dataset.sort ?? td.innerText.split("\n")[0].trim();
+  if (td.dataset.sort && /^\d{4}-\d\d-\d\d/.test(raw)) return Date.parse(raw);
+  if (raw === "" || raw === "—") return null;
+  const num = raw.replace(/[−–]/g, "-").replace(/[$,%+\s]/g, "");
+  if (/^-?\d*\.?\d+$/.test(num)) return parseFloat(num);
+  return raw.toLowerCase();
+}
+function applySort(table) {
+  const head = table.tHead, body = table.tBodies[0];
+  if (!head || !body) return;
+  const st = sortState[tableKey(table)];
+  [...head.rows[0].cells].forEach((th, i) => {
+    th.classList.toggle("sort-asc", !!st && st.col === i && st.dir === 1);
+    th.classList.toggle("sort-desc", !!st && st.col === i && st.dir === -1);
+  });
+  const tag = st ? `${st.col}:${st.dir}` : "";
+  if (!st || body.dataset.sorted === tag) return;
+  const rows = [...body.rows].filter((r) => !r.querySelector("td[colspan]"));
+  rows.sort((a, b) => {
+    const x = sortValue(a.cells[st.col]), y = sortValue(b.cells[st.col]);
+    if (x === null && y === null) return 0;
+    if (x === null) return 1;            // blanks always last
+    if (y === null) return -1;
+    if (typeof x === "number" && typeof y === "number") return (x - y) * st.dir;
+    return String(x).localeCompare(String(y), undefined, { numeric: true }) * st.dir;
+  });
+  body.dataset.sorted = tag;
+  rows.forEach((r) => body.appendChild(r));
+}
+function markSortable(root = document) {
+  root.querySelectorAll("table").forEach((table) => {
+    table.tHead?.rows[0] && [...table.tHead.rows[0].cells].forEach((th) => { if (th.textContent.trim()) th.classList.add("sortable"); });
+    applySort(table);
+  });
+}
+document.addEventListener("click", (e) => {
+  const th = e.target.closest("th.sortable");
+  if (!th) return;
+  const table = th.closest("table"), key = tableKey(table), col = th.cellIndex, st = sortState[key];
+  sortState[key] = !st || st.col !== col ? { col, dir: 1 } : st.dir === 1 ? { col, dir: -1 } : undefined;
+  if (!sortState[key]) { delete sortState[key]; if (current.name) views[current.name].update(current.arg); }  // back to the table's own order
+  delete table.tBodies[0]?.dataset.sorted;
+  applySort(table);
+});
+new MutationObserver(() => markSortable()).observe(document.body, { childList: true, subtree: true });
+
+// ---------- value-over-time chart ----------
+// One series (the value), so no legend: the panel title names it. Crosshair + tooltip on hover,
+// a hairline reference at the budget / period start, and a values table for reading without hover.
+const chartState = {};  // per chart id: { range, data }
+function chartPanel(id, title, ranges, initial) {
+  chartState[id] = chartState[id] || { range: initial };
+  const r = chartState[id].range;
+  return `<div class="panel chart-panel" id="${id}">
+    <div class="panel-head">
+      <div><h2>${esc(title)}</h2><div class="chart-head-num" id="${id}-num"></div></div>
+      <div class="ranges" role="tablist">${ranges.map((x) => `<button type="button" data-range="${id}:${x}" class="${x === r ? "on" : ""}">${x}</button>`).join("")}</div>
+    </div>
+    <div class="chart" id="${id}-plot"><div class="msg">Loading…</div></div>
+    <details class="chart-table"><summary>Show values</summary><div class="scroll-t" id="${id}-table"></div></details>
+  </div>`;
+}
+async function loadChart(id, fetcher) {
+  const box = $(`${id}-plot`); if (!box) return;
+  chartState[id].fetcher = fetcher;
+  chartState[id].loadedAt = Date.now();
+  if (chartState[id].data && !box.querySelector("svg")) drawChart(id);  // revisit: last chart at once
+  box.classList.add("loading");  // refetch keeps the previous frame, dimmed
+  const res = await fetcher(chartState[id].range).catch((e) => ({ ok: false, error: e.message }));
+  if (!$(`${id}-plot`)) return;
+  box.classList.remove("loading");
+  if (!res.ok) { box.innerHTML = `<div class="msg">Couldn't load history: ${esc(res.error)}</div>`; return; }
+  chartState[id].data = res;
+  drawChart(id);
+}
+function drawChart(id) {
+  const box = $(`${id}-plot`), res = chartState[id]?.data;
+  if (!box || !res) return;
+  const pts = res.points.map(([t, v]) => [new Date(t).getTime(), v]);
+  const head = $(`${id}-num`);
+  if (pts.length < 2) {
+    box.innerHTML = `<div class="msg">Not enough history yet for this range.</div>`;
+    if (head) head.innerHTML = "";
+    return;
+  }
+  const first = pts[0][1], last = pts[pts.length - 1][1], chg = last - first;
+  if (head) head.innerHTML = `<strong>${money(last)}</strong><span class="${tone(chg)}">${signed(chg)} (${pct(first ? chg / first * 100 : null)})</span> <span class="faint">this range</span>`;
+
+  const W = Math.max(320, box.clientWidth - 28), H = 230, L = 64, R = 14, T = 12, B = 26;
+  const x0 = pts[0][0], x1 = pts[pts.length - 1][0];
+  const vals = pts.map((p) => p[1]).concat(res.baseline != null ? [res.baseline] : []);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const padY = (hi - lo || Math.abs(hi) * 0.01 || 1) * 0.12; lo -= padY; hi += padY;
+  const X = (t) => L + ((t - x0) / (x1 - x0 || 1)) * (W - L - R);
+  const Y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const span = x1 - x0;
+  const fmtX = (t) => span <= 864e5 ? new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : span <= 10 * 864e5 ? new Date(t).toLocaleString([], { month: "short", day: "numeric", hour: "numeric" })
+    : new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
+  const fmtTip = (t) => new Date(t).toLocaleString([], { month: "short", day: "numeric", ...(res.daily ? {} : { hour: "numeric", minute: "2-digit" }) });
+  const yTicks = Array.from({ length: 4 }, (_, i) => lo + ((hi - lo) * (i + 0.5)) / 4);
+  const xTicks = Array.from({ length: 5 }, (_, i) => x0 + ((x1 - x0) * i) / 4);
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+  const area = `${line}L${X(x1).toFixed(1)},${H - B}L${X(x0).toFixed(1)},${H - B}Z`;
+  const baseY = res.baseline != null ? Y(res.baseline) : null;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(res.baseline_label || "")} value over time">
+      ${yTicks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.06)"/><text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" fill="#5f6468" font-size="11">${money(v).replace(/\.\d\d$/, "")}</text>`).join("")}
+      ${xTicks.map((t, i) => `<text x="${X(t)}" y="${H - 6}" text-anchor="${i === 0 ? "start" : i === 4 ? "end" : "middle"}" fill="#5f6468" font-size="11">${fmtX(t)}</text>`).join("")}
+      ${baseY != null ? `<line x1="${L}" x2="${W - R}" y1="${baseY}" y2="${baseY}" stroke="rgba(255,255,255,.28)" stroke-width="1"/>
+        <text x="${W - R}" y="${baseY - 5}" text-anchor="end" fill="#9aa0a6" font-size="11">${esc(res.baseline_label)} ${money(res.baseline)}</text>` : ""}
+      <path d="${area}" fill="rgba(111,217,138,.10)"/>
+      <path d="${line}" fill="none" stroke="#6fd98a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${X(x1)}" cy="${Y(last)}" r="4" fill="#6fd98a" stroke="#0f1211" stroke-width="2"/>
+      <g class="hover" style="display:none"><line y1="${T}" y2="${H - B}" stroke="rgba(255,255,255,.35)"/><circle r="4.5" fill="#6fd98a" stroke="#0f1211" stroke-width="2"/></g>
+      <rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" class="hit"/>
+    </svg><div class="tip"></div>`;
+  const svg = box.querySelector("svg"), g = svg.querySelector(".hover"), tip = box.querySelector(".tip");
+  const show = (clientX) => {
+    const rect = svg.getBoundingClientRect(), sx = ((clientX - rect.left) / rect.width) * W;
+    const t = x0 + ((sx - L) / (W - L - R)) * (x1 - x0);
+    let i = pts.findIndex((p) => p[0] >= t); if (i < 0) i = pts.length - 1;
+    if (i > 0 && t - pts[i - 1][0] < pts[i][0] - t) i -= 1;
+    const [pt, pv] = pts[i], px = X(pt), py = Y(pv);
+    g.style.display = ""; g.querySelector("line").setAttribute("x1", px); g.querySelector("line").setAttribute("x2", px);
+    g.querySelector("circle").setAttribute("cx", px); g.querySelector("circle").setAttribute("cy", py);
+    const d = pv - first;
+    tip.innerHTML = "";
+    const strong = document.createElement("strong"); strong.textContent = money(pv);
+    const when_ = document.createElement("div"); when_.className = "muted"; when_.textContent = fmtTip(pt);
+    const ch = document.createElement("div"); ch.innerHTML = `<span class="k"></span>`; ch.append(`${signed(d)} (${pct(first ? d / first * 100 : null)}) vs range start`);
+    tip.append(strong, ch, when_);
+    tip.style.display = "block";
+    const left = (px / W) * rect.width + 14;
+    tip.style.left = Math.min(left, rect.width - tip.offsetWidth + 10) + "px";
+    tip.style.top = Math.max(0, (py / H) * rect.height - 20) + "px";
+  };
+  svg.addEventListener("pointermove", (e) => show(e.clientX));
+  svg.addEventListener("pointerleave", () => { g.style.display = "none"; tip.style.display = "none"; });
+  const tbl = $(`${id}-table`);
+  if (tbl) tbl.innerHTML = `<table><thead><tr><th>${res.daily ? "Date" : "Time"}</th><th class="num">Value</th><th class="num">vs start</th></tr></thead><tbody>${
+    [...pts].reverse().map(([t, v]) => `<tr><td data-sort="${t}">${fmtTip(t)}</td><td class="num">${money(v)}</td><td class="num ${tone(v - first)}">${signed(v - first)}</td></tr>`).join("")}</tbody></table>`;
+}
+window.addEventListener("resize", () => Object.keys(chartState).forEach(drawChart));
+function refreshChartIfStale(id) {  // charts refresh every minute, not on every 5-second poll
+  const c = chartState[id];
+  if (c?.fetcher && Date.now() - (c.loadedAt || 0) > 60000) { c.loadedAt = Date.now(); loadChart(id, c.fetcher); }
+}
+
+// ---------- delete / remove ----------
+async function deleteFlow(sid) {
+  const st = await api().strategy_status(sid);
+  if (!st.ok) return toast(st.error || "Could not check the strategy", true);
+  let msg;
+  if (!st.traded) {
+    msg = `Delete ${sid}?\n\nIt never traded, so it's deleted completely from this app:\n` +
+      `• it disappears from Strategies and My strategies\n` +
+      (st.local ? `• its folder strategies/${sid}/ moves to the Trash${st.linked ? " (your linked file is not touched)" : ""}\n` : "") +
+      `\nNote: the shared OMS database doesn't let this app delete rows, so the record still exists there (the web dashboard and teammates still see it) until a database owner removes it.`;
+  } else {
+    msg = `Remove ${sid}?\n\nIt has ${st.fills} fill${st.fills === 1 ? "" : "s"}, so its record is kept:\n` +
+      `• it's removed from My strategies and its schedule is turned off\n` +
+      (st.local ? `• its code stays in strategies/${sid}/\n` : "") +
+      `• it moves to a "Removed" section on the Strategies page, with its final numbers\n` +
+      (st.positions ? `\nIt still holds ${st.positions} position${st.positions === 1 ? "" : "s"} worth about ${money(st.position_value)}. Removing does not sell them.` : "") +
+      (st.open_orders ? `\nIt has ${st.open_orders} open order${st.open_orders === 1 ? "" : "s"}. Removing does not cancel them.` : "");
+  }
+  if (!confirm(msg)) return;
+  const res = await api().delete_strategy(sid);
+  if (!res.ok) return toast(res.error, true);
+  toast(res.action === "deleted" ? `${sid} deleted` : `${sid} removed. See Strategies → Removed`);
+  closeOverlays(); openMenu = null;
+  await refresh(); refreshBooks();
+  if (current.name === "strategy") location.hash = "#/strategies"; else route();
+}
+
+// ---------- Strategy guide ----------
+views.guide = {
+  interval: 0,
+  mount() {
+    return head("Strategy guide", "What your code needs to do to run on this platform, and how the app runs it.") + `<div class="guide">
+<div class="callout"><b>The whole contract:</b> a strategy is one <code>.py</code> or <code>.ipynb</code> file that creates <code>OMS()</code>, decides target weights, and calls <code>oms.rebalance(weights, prices)</code>. The app supplies the strategy id and test-run switch; you supply the signal.</div>
+
+<h2>Smallest working strategy</h2>
+<pre>"""Equal-weight SPY and QQQ
+Holds the two ETFs half and half, rebalanced every run."""
+from oms_client import OMS, latest_prices
+
+oms = OMS()                                 # strategy id + test-run switch come from the app
+if not oms.market_is_open():
+    oms.plan_only("Market is closed")       # print the plan instead of queueing orders
+
+target = {"SPY": 0.5, "QQQ": 0.5}           # fraction of this strategy's equity; the rest stays cash
+oms.rebalance(target, latest_prices(set(target) | set(oms.holdings())))</pre>
+
+<h2>How a run works</h2>
+<ol>
+  <li>You press <b>Run now</b> / <b>Test run</b>, or the schedule fires (even with the app closed).</li>
+  <li>The app picks the code: your working file, or a saved version if you chose one (scheduled runs use the version pinned in the schedule).</li>
+  <li>It checks the code (the red and yellow lines on a card) and refuses to run on errors.</li>
+  <li>It runs the file from <b>its own folder</b> with the strategies Python environment. A <code>.py</code> runs as a script; a notebook runs every cell top to bottom, like Run All.</li>
+  <li>Your code talks to the OMS through <code>oms_client</code>. The OMS checks the order against the strategy's cash and positions, then sends it to Alpaca paper.</li>
+  <li>Everything printed is the run log. The app records the status, how many orders were sent, and which version ran.</li>
+</ol>
+
+<h2>What the app gives your code</h2>
+<table class="panel"><tbody>
+  <tr><td><code>SIMPLI_STRATEGY_ID</code></td><td>The OMS strategy id. <code>OMS()</code> reads it, so don't hardcode a different id.</td></tr>
+  <tr><td><code>OMS_DRY_RUN=1</code></td><td>Set for Test run. Orders are printed, not sent.</td></tr>
+  <tr><td><code>SIMPLI_VERSION</code></td><td>The version label being run, or <code>working</code>.</td></tr>
+  <tr><td>Working folder</td><td>The folder your file is in, so relative paths like <code>models/</code> work.</td></tr>
+  <tr><td>Python</td><td><code>strategies/.venv</code>: pandas, numpy, xgboost, scikit-learn, alpaca-py, requests. Install more with <code>strategies/.venv/bin/pip install …</code>.</td></tr>
+</tbody></table>
+
+<h2>oms_client, the parts you'll use</h2>
+<table class="panel"><tbody>
+  <tr><td><code>oms = OMS()</code></td><td>Connects (starts the OMS backend if needed). Outside the app: <code>OMS("your-id")</code>.</td></tr>
+  <tr><td><code>oms.rebalance(weights, prices)</code></td><td>Moves the book to target weights with market orders: sells first, waits for fills, then buys with the cash freed. Sells anything not in <code>weights</code>. Skips changes under $1.</td></tr>
+  <tr><td><code>latest_prices(symbols)</code></td><td>Last trade per symbol from Alpaca (about 15 min delayed).</td></tr>
+  <tr><td><code>oms.holdings()</code>, <code>oms.book()</code></td><td>This strategy's positions, and its cash, orders, and fills.</td></tr>
+  <tr><td><code>oms.buy(sym, notional=…)</code>, <code>oms.sell(sym, qty=…)</code>, <code>oms.order(**fields)</code></td><td>Single orders, including limit, options, and multi-leg (fields as on the New order tab).</td></tr>
+  <tr><td><code>oms.market_is_open()</code>, <code>oms.plan_only(reason)</code></td><td>Check market hours; switch the rest of the run to plan-only. The run shows as <b>plan only</b>.</td></tr>
+  <tr><td><code>oms.daily_id("tag")</code></td><td>A client order id that's the same all day, so a re-run doesn't double an order.</td></tr>
+  <tr><td><code>alpaca_keys()</code></td><td>The paper keys, for alpaca-py market data (bars, quotes).</td></tr>
+</tbody></table>
+
+<h2>Where the code lives</h2>
+<ul>
+  <li><b>From template</b> or <b>Upload a copy</b>: the file sits in <code>strategies/&lt;id&gt;/</code>. Open it with the card's <i>Open in editor / Jupyter</i>.</li>
+  <li><b>Link a file</b>: the file stays where it is (any folder or repo on this laptop). Every run reads it fresh, so saving in your editor is all it takes. The app only stores a manifest and versions in <code>strategies/&lt;id&gt;/</code>.</li>
+</ul>
+
+<h2>Versions</h2>
+<p>Nothing is tracked automatically. When the code is in a state you want to keep, open <b>Versions</b> and <b>Save current code</b> with a label (<code>v1</code>, <code>2.0</code>…) and a name. The app copies the file into <code>strategies/&lt;id&gt;/versions/</code>. From there you can compare it with the working code, run it, restore it, or pin it so scheduled runs use that exact code while you keep editing. Every run in the history shows the version it ran (<i>working</i> = unsaved changes). For notebooks only code cells count, so running a notebook doesn't make it look modified.</p>
+
+<h2>Statuses</h2>
+<table class="panel"><tbody>
+  <tr><td>${badge("succeeded")}</td><td>Finished. The result says how many orders went out.</td></tr>
+  <tr><td>${badge("plan_only")}</td><td>The code called <code>plan_only()</code> (or printed "showing the plan only"): nothing was sent.</td></tr>
+  <tr><td>${badge("failed")}</td><td>An uncaught exception or failing cell. The result is the error; the log has the traceback.</td></tr>
+  <tr><td>${badge("skipped")} ${badge("stopped")} ${badge("interrupted")}</td><td>Already running; stopped from the app; or the process died (laptop shut down).</td></tr>
+</tbody></table>
+
+<h2>Templates</h2>
+<div class="actions"><button class="btn" data-template="py">Show the .py template</button><button class="btn" data-template="ipynb">Show the notebook template</button></div>
+<pre id="tpl" style="display:none"></pre>
+</div>`;
+  },
+  async update() {},
+};
+
+// ---------- Account (Portfolio) ----------
+views.account = {
+  interval: 5000,
+  mount() {
+    return head("Portfolio", "Shared Alpaca paper account, with every OMS fill and held position attributed back to its strategy.",
+      `<a class="btn primary" href="#/order">New order</a>`) +
+      chartPanel("acct-chart", "Account value", ["1D", "1W", "1M", "3M", "1Y"], "1W") + `<div id="body"></div>`;
+  },
+  bind() { loadChart("acct-chart", (r) => api().account_history(r)); },
+  async update() {
+    refreshChartIfStale("acct-chart");
+    if (!state.oms.backend) return ($("body").innerHTML = omsDown());
+    const [acct, pos, spos, fills] = await Promise.allSettled([
+      oms("GET", "/api/account"), oms("GET", "/api/positions"), oms("GET", "/api/strategy-positions"), oms("GET", "/api/fills?limit=12")]);
+    const a = acct.value, P = pos.value || [], SP = spos.value || [], F = fills.value || [];
+    const pv = a?.portfolio_value ?? a?.equity, local = localIds();
+    // Draw with the last snapshots straight away; fresh ones arrive in the background.
+    const hadSnaps = !!views.account.snaps;
+    const snaps = views.account.snaps || {};
+    if (P.length) api().snapshots(P.map((p) => p.symbol)).then((s) => {
+      views.account.snaps = s;
+      if (!hadSnaps && current.name === "account") views.account.update();
+    }).catch(() => {});
+    const mult = (p) => (p.asset_class === "us_option" ? 100 : 1);
+    const dayPct = (p) => { const s = snaps[p.symbol]; return s?.prev_close ? (p.current_price / s.prev_close - 1) * 100 : null; };
+    const totPct = (p) => (p.avg_entry_price ? (p.current_price / p.avg_entry_price - 1) * 100 : null);
+    const dayUsd = P.reduce((t, p) => { const s = snaps[p.symbol]; return t + (s?.prev_close ? p.qty * (p.current_price - s.prev_close) * mult(p) : 0); }, 0);
+    const dayBase = pv != null ? pv - dayUsd : null;
+    const tags = (sym) => {
+      const t = SP.filter((p) => p.symbol === sym);
+      return t.length ? `<div class="tags">${t.map((p) => `<a class="chip ${local.has(p.strategy_id) ? "local" : ""}" href="#/strategy/${enc(p.strategy_id)}">${esc(p.strategy_id)} · ${shares(p.qty)}</a>`).join("")}</div>` : '<span class="muted">Outside OMS</span>';
+    };
+    $("body").innerHTML = `
+      ${acct.status === "rejected" ? `<div class="banner">Account balances are temporarily unavailable: ${esc(acct.reason.message)}</div>` : ""}
+      <div class="card hero">
+        <div><span class="eyebrow">Portfolio value</span><strong class="big">${money(pv)}</strong><span class="muted">${a ? "Paper account · " + esc(a.status) : "Loading account…"}</span></div>
+        <div class="hero-meta">
+          <div><span>Today (positions)</span><strong class="${tone(dayUsd)}">${pct(dayBase ? dayUsd / dayBase * 100 : null)} <span style="font-size:13px">${signed(dayUsd)}</span></strong></div>
+          <div><span>Cash</span><strong>${money(a?.cash)}</strong></div>
+          <div><span>Buying power</span><strong>${money(a?.buying_power)}</strong></div>
+          <div><span>Open positions</span><strong>${pos.value ? P.length : "—"}</strong></div>
+        </div>
+      </div>
+      <div class="two">
+        <div class="panel"><div class="panel-head"><h2>Balances</h2><span class="chip">Paper</span></div>
+          <div class="balances">
+            <div><span>Equity</span><strong>${money(a?.equity)}</strong></div>
+            <div><span>Portfolio value</span><strong>${money(pv)}</strong></div>
+            <div><span>Cash</span><strong>${money(a?.cash)}</strong></div>
+            <div><span>Buying power</span><strong>${money(a?.buying_power)}</strong></div>
+          </div></div>
+        <div class="panel"><div class="panel-head"><h2>Strategy attribution</h2><a href="#/strategies">View strategies</a></div>
+          <p class="muted" style="margin:14px 18px 6px;font-size:13px">Position tags are from OMS fills, not inferred from the shared brokerage account. <span class="chip local">blue</span> = on this laptop.</p>
+          <div class="big-count"><strong>${spos.value ? SP.length : "—"}</strong><span class="muted">open strategy positions</span></div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><div><h2>Top positions</h2><p>Account positions with OMS strategy allocation</p></div><span class="muted">${P.length} total</span></div>
+        ${pos.status === "rejected" ? `<div class="banner" style="margin:14px">Positions could not be loaded from Alpaca: ${esc(pos.reason.message)}</div>` : ""}
+        ${P.length ? `<table><thead><tr><th>Symbol</th><th>Side</th><th class="num">Qty</th><th class="num">Avg</th><th class="num">Last</th><th class="num">Market value</th><th class="num">Today</th><th class="num">Total</th><th class="num">Unrealized</th><th>Strategies</th></tr></thead><tbody>
+          ${P.map((p) => `<tr><td><a href="#/position/${enc(p.symbol)}">${esc(p.symbol)}</a></td><td>${esc(p.side)}</td><td class="num">${shares(p.qty)}</td>
+            <td class="num">${money(p.avg_entry_price)}</td><td class="num">${money(p.current_price)}</td><td class="num">${money(p.market_value)}</td>
+            ${pctCell(dayPct(p))}${pctCell(totPct(p))}
+            <td class="num ${tone(p.unrealized_pl)}">${money(p.unrealized_pl)}</td><td>${tags(p.symbol)}</td></tr>`).join("")}
+          </tbody></table>` : `<div class="empty">Your paper account has no open positions.</div>`}</div>
+      <div class="panel"><div class="panel-head"><div><h2>Recent transactions</h2><p>Fills accepted through this OMS</p></div></div>
+        ${F.length ? `<table><thead><tr><th>Time</th><th>Transaction</th><th>Strategy</th><th class="num">Quantity</th><th class="num">Fill price</th></tr></thead><tbody>
+          ${F.map((f) => `<tr><td data-sort="${f.filled_at}">${when(f.filled_at)}</td><td><a href="#/position/${enc(f.symbol)}">${esc(f.side)} ${esc(f.symbol)}</a></td>
+            <td><a class="chip ${local.has(f.strategy_id) ? "local" : ""}" href="#/strategy/${enc(f.strategy_id)}">${esc(f.strategy_id)}</a></td>
+            <td class="num">${shares(f.qty)}</td><td class="num">${price(f.price)}</td></tr>`).join("")}
+          </tbody></table>` : `<div class="empty">No OMS fills yet.</div>`}</div>`;
+  },
+};
+
+// ---------- Strategies (every strategy in the OMS) ----------
+views.strategies = {
+  interval: 5000,
+  mount() {
+    return head("Strategies", "Every strategy registered in the shared OMS, including teammates'. Register a strategy before it can trade; its id is required on every order.") +
+      `<form class="form-row" id="reg-form">
+        <label class="f" style="min-width:260px">Strategy id<input id="reg-id" placeholder="ritwij-test-straddle-volatility" required /></label>
+        <label class="f">Cash budget<input id="reg-budget" value="100000" inputmode="decimal" required /></label>
+        <button class="btn primary" type="submit" style="height:36px">Register</button>
+      </form><div id="body"></div>`;
+  },
+  async update() {
+    if (!state.oms.backend) return ($("body").innerHTML = omsDown());
+    let all, flags;
+    try { [all, flags] = await Promise.all([oms("GET", "/api/strategies"), api().strategy_flags()]); }
+    catch (e) { return ($("body").innerHTML = `<div class="banner">${esc(e.message)}</div>`); }
+    // Deleted strategies are hidden; removed ones move to their own section below.
+    const rows = all.filter((s) => !flags[s.id]);
+    const removed = all.filter((s) => flags[s.id]?.state === "removed").map((s) => ({ ...s, flag: flags[s.id] }));
+    // The table shows as soon as the strategy list is in; performance (one book per strategy)
+    // fills in after, starting from the last numbers so polling doesn't blank the columns.
+    this.draw(rows, removed, this.perf || {});
+    const perf = await api().all_strategy_performance(all.filter((s) => flags[s.id]?.state !== "deleted").map((s) => s.id));
+    this.perf = perf;
+    if (current.name === "strategies") this.draw(rows, removed, perf);
+  },
+  draw(rows, removed, perf) {
+    if (!$("body")) return;
+    const local = localIds();
+    const trash = (id) => `<button class="btn ghost icon-btn" data-delete="${esc(id)}" title="Delete or remove ${esc(id)}" aria-label="Delete ${esc(id)}">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg></button>`;
+    $("body").innerHTML = `<div class="panel">${rows.length ? `<table><thead><tr><th>Strategy</th><th class="num">Budget</th><th class="num">Equity</th><th class="num">Today</th><th class="num">Total return</th><th class="num">Cash left</th><th class="num">Reserved</th><th class="num">Realized</th><th class="num">Unrealized</th><th></th></tr></thead><tbody>
+      ${rows.map((s) => { const p = perf[s.id] || {}; return `<tr class="link" data-href="#/strategy/${enc(s.id)}"><td><a href="#/strategy/${enc(s.id)}">${esc(s.id)}</a>${local.has(s.id) ? ' <span class="chip local">on this laptop</span>' : ""}</td>
+        <td class="num">${money(s.cash_budget)}</td><td class="num">${money(p.equity)}</td>
+        ${pctCell(p.day_pct, `<div class="faint" style="font-size:11.5px">${signed(p.day_change)}</div>`)}
+        ${pctCell(p.total_pct, `<div class="faint" style="font-size:11.5px">${signed(p.total_change)}</div>`)}
+        <td class="num">${money(s.cash_remaining)}</td><td class="num">${money(s.cash_reserved)}</td>
+        <td class="num ${tone(s.realized_pnl)}">${money(s.realized_pnl)}</td><td class="num ${tone(s.unrealized_pnl)}">${money(s.unrealized_pnl)}</td>
+        <td class="num">${trash(s.id)}</td></tr>`; }).join("")}
+      </tbody></table>` : `<div class="empty">No strategies yet.</div>`}</div>
+      ${removed.length ? `<div class="section-head"><h2>Removed</h2><span class="faint">Traded strategies kept for the record. They no longer run from this laptop.</span></div>
+      <div class="panel"><table><thead><tr><th>Strategy</th><th>Removed</th><th class="num">Equity at removal</th><th class="num">Total return at removal</th><th class="num">Fills</th><th class="num">Equity now</th><th class="num">Positions at removal</th><th></th></tr></thead><tbody>
+      ${removed.map((s) => { const f = s.flag.final || {}, p = perf[s.id] || {}; return `<tr class="link removed-row" data-href="#/strategy/${enc(s.id)}">
+        <td><a href="#/strategy/${enc(s.id)}">${esc(s.id)}</a> <span class="chip removed">removed</span></td>
+        <td data-sort="${s.flag.flagged_at}">${when(s.flag.flagged_at)}</td>
+        <td class="num">${money(f.equity)}</td>
+        ${pctCell(f.total_pct, `<div class="faint" style="font-size:11.5px">${signed(f.total_change)}</div>`)}
+        <td class="num">${f.fills ?? "—"}</td>
+        <td class="num">${money(p.equity)}</td>
+        <td class="num">${f.positions ?? "—"}</td>
+        <td class="num"><button class="btn sm" data-restore="${esc(s.id)}">Restore</button></td></tr>`; }).join("")}
+      </tbody></table></div>` : ""}`;
+  },
+  bind() {
+    $("reg-form").onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await oms("POST", "/api/strategies", { id: $("reg-id").value.trim(), cash_budget: Number($("reg-budget").value) });
+        toast("Registered " + $("reg-id").value.trim()); $("reg-id").value = ""; views.strategies.update();
+      } catch (err) { toast(err.message, true); }
+    };
+  },
+};
+
+// ---------- Strategy detail ----------
+views.strategy = {
+  interval: 5000,
+  mount(id) {
+    return `<a class="back" href="#/strategies">← Strategies</a>` +
+      head(id, "Orders, fills, and the positions booked from this strategy id.",
+        `<button class="btn danger" data-delete="${esc(id)}">Delete strategy</button>`) +
+      `<div id="flag-bar"></div><div id="local-bar"></div>` +
+      chartPanel(`sc-${id}`, "Strategy value", ["1W", "1M", "3M", "1Y", "ALL"], "ALL") +
+      `<div id="risk">${statsPanel(state.stats[id])}</div><div id="body"></div>`;
+  },
+  bind(id) { loadChart(`sc-${id}`, (r) => api().strategy_history(id, r)); },
+  async update(id) {
+    if (!state.oms.backend) return ($("body").innerHTML = omsDown());
+    refreshChartIfStale(`sc-${id}`);
+    api().strategy_stats([id]).then((r) => { state.stats[id] = r[id]; if ($("risk") && current.arg === id) $("risk").innerHTML = statsPanel(r[id]); });
+    const flag = (await api().strategy_flags())[id];
+    $("flag-bar").innerHTML = flag ? `<div class="banner">${flag.state === "removed"
+      ? `Removed on ${when(flag.flagged_at)}. Kept here for the record. <button class="btn sm" data-restore="${esc(id)}">Restore</button>`
+      : `Deleted on ${when(flag.flagged_at)} (never traded).`}</div>` : "";
+    const delBtn = document.querySelector(`[data-delete="${CSS.escape(id)}"]`);
+    if (delBtn) delBtn.style.display = flag ? "none" : "";
+    const l = localFor(id);
+    $("local-bar").innerHTML = l ? `<div class="banner info actions" style="justify-content:space-between">
+      <span>Runs from <span class="mono">${esc(l.path.split("/").pop())}</span> on this laptop${l.matches_version ? " · " + esc(l.matches_version) : ""}${scheduleText(l.schedule) ? " · " + esc(scheduleText(l.schedule)) : ""}</span>
+      <span class="actions"><button class="btn sm primary" data-run="${esc(id)}">Run now</button><button class="btn sm" data-dry="${esc(id)}">Test run</button><button class="btn sm" data-versions="${esc(id)}">Versions</button></span></div>` : "";
+    let b, perf;
+    try {
+      b = await oms("GET", `/api/strategies/${enc(id)}/book`);
+      perf = await api().strategy_performance(id, b);
+    } catch (e) { return ($("body").innerHTML = `<div class="banner">${esc(e.message)}</div>`); }
+    const s = b.strategy, sum = perf.summary || {}, pp = perf.positions || {};
+    const sorted = [...b.positions].sort((x, y) => (pp[y.symbol]?.total_pct ?? 0) - (pp[x.symbol]?.total_pct ?? 0));
+    $("body").innerHTML = `
+      <div class="stats">
+        <div class="stat"><span>Equity</span><strong>${money(sum.equity)}</strong></div>
+        <div class="stat"><span>Today</span><strong class="${tone(sum.day_change)}">${pct(sum.day_pct)}</strong> <span class="${tone(sum.day_change)}" style="display:inline">${signed(sum.day_change)}</span></div>
+        <div class="stat"><span>Total return</span><strong class="${tone(sum.total_change)}">${pct(sum.total_pct)}</strong> <span class="${tone(sum.total_change)}" style="display:inline">${signed(sum.total_change)}</span></div>
+        <div class="stat"><span>Cash left</span><strong>${money(s.cash_remaining)}</strong></div>
+        <div class="stat"><span>Reserved</span><strong>${money(s.cash_reserved)}</strong></div>
+        <div class="stat"><span>Budget</span><strong>${money(s.cash_budget)}</strong></div>
+        <div class="stat"><span>Realized</span><strong class="${tone(s.realized_pnl)}">${money(s.realized_pnl)}</strong></div>
+        <div class="stat"><span>Unrealized</span><strong class="${tone(s.unrealized_pnl)}">${money(s.unrealized_pnl)}</strong></div>
+      </div>
+      <div class="panel"><div class="panel-head"><div><h2>Positions</h2><p>Today is against the previous close (or cost, if bought today). Total is against average cost.</p></div><span class="muted">${b.positions.length}</span></div>
+        ${b.positions.length ? `<table><thead><tr><th>Symbol</th><th class="num">Qty</th><th class="num">Avg</th><th class="num">Last</th><th class="num">Value</th><th class="num">Today</th><th class="num">Total</th><th class="num">Unrealized</th></tr></thead><tbody>
+          ${sorted.map((p) => { const q = pp[p.symbol] || {}; return `<tr><td><a href="#/position/${enc(p.symbol)}">${esc(p.symbol)}</a>${q.opened_today ? ' <span class="chip off">new today</span>' : ""}</td>
+            <td class="num">${shares(p.qty)}</td><td class="num">${price(p.avg_price)}</td><td class="num">${price(q.price)}</td><td class="num">${money(q.price * p.qty)}</td>
+            ${pctCell(q.day_pct)}${pctCell(q.total_pct)}<td class="num ${tone(p.unrealized_pnl)}">${money(p.unrealized_pnl)}</td></tr>`; }).join("")}
+          </tbody></table>` : `<div class="empty">No open positions for this strategy.</div>`}</div>
+      <div class="panel"><div class="panel-head"><h2>Orders</h2><span class="muted">${b.orders.length}</span></div>
+        ${b.orders.length ? orderTable(b.orders) : `<div class="empty">No orders yet.</div>`}</div>`;
+  },
+};
+function orderLabel(o) { return o.order_class === "mleg" ? o.legs.map((l) => `${l.side} ${l.symbol}`).join(" / ") : `${o.side} ${o.symbol}`; }
+function orderTable(orders) {
+  return `<table><thead><tr><th>When</th><th>Order</th><th>Status</th><th class="num">Qty</th><th class="num">Filled</th><th class="num">Avg fill</th><th class="num">Fill value</th><th class="num">Limit</th><th></th></tr></thead><tbody>
+    ${orders.map((o) => `<tr><td data-sort="${o.created_at}">${when(o.created_at)}</td>
+      <td><div>${esc(orderLabel(o))}${o.notional ? ` <span class="muted">$${price(o.notional)}</span>` : ""}</div><div class="muted mono">${esc(o.client_order_id || o.id.slice(0, 8))}</div></td>
+      <td>${badge(o.status)}${o.reject_reason ? `<div class="muted">${esc(o.reject_reason)}</div>` : ""}</td>
+      <td class="num">${o.qty ? shares(o.qty) : '<span class="faint">$ amount</span>'}</td><td class="num">${shares(o.filled_qty)}</td>
+      <td class="num">${price(o.filled_avg_price)}</td><td class="num">${o.filled_qty && o.filled_avg_price ? money(o.filled_qty * o.filled_avg_price * (o.asset_class === "us_option" ? 100 : 1)) : "—"}</td>
+      <td class="num">${price(o.limit_price)}</td>
+      <td class="num">${TERMINAL.includes(o.status) || o.status === "pending_cancel" ? "" : `<button class="btn sm danger" data-cancel="${o.id}">Cancel</button>`}</td></tr>`).join("")}
+  </tbody></table>`;
+}
+
+// ---------- Position detail ----------
+views.position = {
+  interval: 5000,
+  mount(sym) {
+    return `<a class="back" href="#/account">← Portfolio</a>` + head(sym, "The paper account's position, and the strategy trades that make it up.") + `<div id="body"></div>`;
+  },
+  async update(sym) {
+    if (!state.oms.backend) return ($("body").innerHTML = omsDown());
+    let d;
+    try { d = await oms("GET", `/api/positions/${enc(sym)}`); } catch (e) { return ($("body").innerHTML = `<div class="banner">${esc(e.message)}</div>`); }
+    const a = d.account_position;
+    const snap = (await api().snapshots([sym]).catch(() => ({})))[sym];
+    const dayP = a && snap?.prev_close ? (a.current_price / snap.prev_close - 1) * 100 : null;
+    const totP = a?.avg_entry_price ? (a.current_price / a.avg_entry_price - 1) * 100 : null;
+    $("body").innerHTML = `
+      ${d.account_error ? `<div class="banner">${esc(d.account_error)}</div>` : ""}
+      <div class="stats">
+        <div class="stat"><span>Account qty</span><strong>${a ? shares(a.qty) : "—"}</strong></div>
+        <div class="stat"><span>Avg entry</span><strong>${a ? money(a.avg_entry_price) : "—"}</strong></div>
+        <div class="stat"><span>Last</span><strong>${a ? money(a.current_price) : "—"}</strong></div>
+        <div class="stat"><span>Today</span><strong class="${tone(dayP)}">${pct(dayP)}</strong></div>
+        <div class="stat"><span>Total</span><strong class="${tone(totP)}">${pct(totP)}</strong></div>
+        <div class="stat"><span>Unrealized</span><strong class="${tone(a?.unrealized_pl)}">${a ? money(a.unrealized_pl) : "—"}</strong></div>
+      </div>
+      ${!d.strategies.length ? `<div class="panel"><div class="empty">${a ? "No strategy has a recorded trade in this symbol." : `No open account position or OMS activity for ${esc(sym)}.`}</div></div>` : ""}
+      ${d.strategies.map((g) => `<div class="panel"><div class="panel-head"><h2><a href="#/strategy/${enc(g.strategy_id)}">${esc(g.strategy_id)}</a></h2><span class="muted">${shares(g.qty)} @ ${price(g.avg_price)}</span></div>
+        ${g.trades.length ? `<table><thead><tr><th>When</th><th>Side</th><th class="num">Qty</th><th class="num">Price</th></tr></thead><tbody>
+          ${g.trades.map((t) => `<tr><td data-sort="${t.filled_at}">${when(t.filled_at)}</td><td>${esc(t.side)}</td><td class="num">${shares(t.qty)}</td><td class="num">${price(t.price)}</td></tr>`).join("")}
+          </tbody></table>` : `<div class="empty">No fills recorded.</div>`}</div>`).join("")}`;
+  },
+};
+
+// ---------- New order (same ticket as the web dashboard) ----------
+const INTENTS = [["buy_to_open", "Buy to open"], ["buy_to_close", "Buy to close"], ["sell_to_open", "Sell to open"], ["sell_to_close", "Sell to close"]];
+let ticket = { mode: "equity", legs: 2 };
+views.order = {
+  interval: 0,
+  mount() {
+    return head("New order", "Send a finished equity, option, or multi-leg order. Alpaca executes it on the paper account.") + `<div id="body"></div>`;
+  },
+  async update() {
+    if (!state.oms.backend) return ($("body").innerHTML = omsDown());
+    let strategies = [];
+    try {
+      const [all, flags] = await Promise.all([oms("GET", "/api/strategies"), api().strategy_flags()]);
+      strategies = all.filter((s) => !flags[s.id]);  // no orders for deleted or removed strategies
+    } catch (e) { return ($("body").innerHTML = `<div class="banner">${esc(e.message)}</div>`); }
+    const opts = strategies.map((s) => `<option value="${esc(s.id)}">${esc(s.id)} · ${money(s.cash_remaining)} left</option>`).join("");
+    const intents = INTENTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+    $("body").innerHTML = `
+      ${strategies.length ? "" : `<div class="banner">Register a strategy on the <a href="#/strategies">Strategies</a> tab first.</div>`}
+      <form class="panel panel-body" id="ticket" style="padding:20px">
+        <div class="segmented">${[["equity", "Equity"], ["option", "Option"], ["mleg", "Multi-leg"]].map(([v, l]) => `<button type="button" data-mode="${v}" class="${ticket.mode === v ? "on" : ""}">${l}</button>`).join("")}</div>
+        <div class="fields">
+          <label class="f">Strategy<select id="t-strategy" required>${opts}</select></label>
+          <label class="f">Client order id<input id="t-coid" placeholder="optional, unique per strategy" /></label>
+          <label class="f" data-show="equity option">Symbol<input id="t-symbol" placeholder="${ticket.mode === "option" ? "AAPL250117C00150000" : "AAPL"}" /></label>
+          <label class="f" data-show="equity">Side<select id="t-side"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
+          <label class="f" data-show="option">Intent<select id="t-intent">${intents}</select></label>
+          <label class="f">Type<select id="t-type">${(ticket.mode === "mleg" ? ["market", "limit"] : ["market", "limit", "stop", "stop_limit"]).map((t) => `<option value="${t}" ${t === "limit" ? "selected" : ""}>${label(t)}</option>`).join("")}</select></label>
+          <label class="f">Quantity<input id="t-qty" value="1" inputmode="decimal" required /></label>
+          <label class="f" data-type="limit stop_limit">Limit price<input id="t-limit" inputmode="decimal" placeholder="${ticket.mode === "mleg" ? "0.60 debit, -0.40 credit" : "190.00"}" /></label>
+          <label class="f" data-type="stop stop_limit">Stop price<input id="t-stop" inputmode="decimal" /></label>
+          <label class="f">Time in force<select id="t-tif"><option value="day">Day</option><option value="gtc">Good til canceled</option></select></label>
+        </div>
+        <div class="legs" data-show="mleg">
+          ${Array.from({ length: ticket.legs }, (_, i) => `<div class="leg">
+            <label class="f">Leg ${i + 1} symbol<input data-leg-symbol="${i}" /></label>
+            <label class="f">Ratio<input data-leg-ratio="${i}" value="1" inputmode="decimal" /></label>
+            <label class="f">Intent<select data-leg-intent="${i}">${intents}</select></label></div>`).join("")}
+          <div class="actions"><button type="button" class="btn sm" data-leg-add ${ticket.legs >= 4 ? "disabled" : ""}>Add leg</button><button type="button" class="btn sm" data-leg-remove ${ticket.legs <= 2 ? "disabled" : ""}>Remove leg</button></div>
+        </div>
+        <div class="ticket-foot"><span class="muted" id="t-estimate">Market orders are checked by Alpaca. Limit debits are checked against strategy cash.</span>
+          <button class="btn primary" type="submit" ${strategies.length ? "" : "disabled"}>Submit order</button></div>
+      </form>
+      <div id="t-result"></div>`;
+    applyTicketVisibility();
+  },
+  bind() {
+    $("view").oninput = $("view").onchange = (e) => { if (e.target.closest("#ticket")) { applyTicketVisibility(); estimate(); } };
+    $("view").onsubmit = async (e) => {
+      if (e.target.id !== "ticket") return;
+      e.preventDefault();
+      const btn = e.target.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Submitting…";
+      try {
+        const o = await oms("POST", "/api/orders", ticketPayload());
+        $("t-result").innerHTML = `<div class="panel"><div class="panel-head"><h2>Order accepted</h2>${badge(o.status)}</div>
+          <div class="panel-body"><a href="#/strategy/${enc(o.strategy_id)}">${esc(o.strategy_id)}</a> <span class="muted mono">· ${esc(o.id)}</span>
+          ${o.alpaca_order_id ? `<div class="muted" style="margin-top:6px">Alpaca ${esc(o.alpaca_order_id)}</div>` : ""}</div></div>`;
+      } catch (err) { $("t-result").innerHTML = `<div class="banner">${esc(err.message)}</div>`; }
+      btn.disabled = false; btn.textContent = "Submit order";
+    };
+  },
+};
+function applyTicketVisibility() {
+  const type = $("t-type")?.value;
+  document.querySelectorAll("#ticket [data-show]").forEach((el) => (el.style.display = el.dataset.show.split(" ").includes(ticket.mode) ? "" : "none"));
+  document.querySelectorAll("#ticket [data-type]").forEach((el) => (el.style.display = el.dataset.type.split(" ").includes(type) ? "" : "none"));
+}
+function estimate() {
+  const qty = Number($("t-qty").value), limit = Number($("t-limit").value), type = $("t-type").value;
+  let msg = "Market orders are checked by Alpaca. Limit debits are checked against strategy cash.";
+  if (qty && $("t-limit").value !== "" && !isNaN(limit) && (type === "limit" || type === "stop_limit")) {
+    if (ticket.mode === "mleg") {
+      if (type === "limit") { const c = limit * qty * 100; msg = c > 0 ? `Debit checked against cash: ${money(c)}` : `Credit, no cash reserve: ${money(Math.abs(c))}`; }
+    } else {
+      const buying = ticket.mode === "equity" ? $("t-side").value === "buy" : $("t-intent").value.startsWith("buy");
+      if (buying && limit > 0) msg = `Debit checked against cash: ${money(limit * qty * (ticket.mode === "option" ? 100 : 1))}`;
+    }
+  }
+  $("t-estimate").textContent = msg;
+}
+function ticketPayload() {
+  const type = $("t-type").value;
+  const base = { strategy_id: $("t-strategy").value, time_in_force: $("t-tif").value, qty: Number($("t-qty").value), type };
+  if ($("t-coid").value.trim()) base.client_order_id = $("t-coid").value.trim();
+  if (type === "limit" || type === "stop_limit") base.limit_price = Number($("t-limit").value);
+  if (type === "stop" || type === "stop_limit") base.stop_price = Number($("t-stop").value);
+  const sideFor = (i) => (i.startsWith("buy") ? "buy" : "sell");
+  if (ticket.mode === "mleg") {
+    return { ...base, order_class: "mleg", legs: Array.from({ length: ticket.legs }, (_, i) => {
+      const intent = document.querySelector(`[data-leg-intent="${i}"]`).value;
+      return { symbol: document.querySelector(`[data-leg-symbol="${i}"]`).value, ratio_qty: Number(document.querySelector(`[data-leg-ratio="${i}"]`).value), side: sideFor(intent), position_intent: intent };
+    }) };
+  }
+  if (ticket.mode === "option") return { ...base, symbol: $("t-symbol").value, side: sideFor($("t-intent").value), position_intent: $("t-intent").value };
+  return { ...base, symbol: $("t-symbol").value, side: $("t-side").value };
+}
+
+// ---------- router ----------
+function parseHash() {
+  const [name, ...rest] = (location.hash.replace(/^#\/?/, "") || "desk").split("/");
+  return { name: views[name] ? name : "desk", arg: rest.length ? decodeURIComponent(rest.join("/")) : null };
+}
+async function route() {
+  const { name, arg } = parseHash();
+  const v = views[name];
+  const changed = name !== current.name || arg !== current.arg;
+  if (changed) {
+    clearInterval(current.timer);
+    current = { name, arg, timer: null };
+    document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("active",
+      a.dataset.nav === name || (a.dataset.nav === "strategies" && name === "strategy") || (a.dataset.nav === "account" && name === "position")));
+    $("view").onsubmit = $("view").oninput = $("view").onchange = null;
+    $("view").innerHTML = v.mount(arg);
+    $("view").scrollTop = 0;
+    const key = `${name}|${arg ?? ""}`;
+    if (CACHED_VIEWS.has(name) && viewCache[key] && $("body")) $("body").innerHTML = viewCache[key];  // instant, then refresh
+    v.bind?.(arg);
+    if (v.interval && name !== "desk") current.timer = setInterval(() => v.update(arg).then(() => remember(name, arg)).catch(() => {}), v.interval);
+  }
+  await v.update(arg).catch((e) => console.error(e));
+  remember(name, arg);
+}
+// OMS pages keep their last render, so switching back to a tab shows it immediately.
+const CACHED_VIEWS = new Set(["account", "strategies", "strategy", "position"]);
+const viewCache = {};
+function remember(name, arg) {
+  if (CACHED_VIEWS.has(name) && current.name === name && current.arg === arg && $("body")) viewCache[`${name}|${arg ?? ""}`] = $("body").innerHTML;
+}
+
+// ---------- polling the local side ----------
+async function refresh() {
+  const [o, strategies, runs] = await Promise.all([api().oms_status(), api().strategies(), api().runs(60)]);
+  const finished = state.runs.some((old) => (old.status === "running" || old.status === "queued") && runs.find((n) => n.id === old.id && n.status !== old.status));
+  const omsChanged = o.backend !== state.oms.backend;
+  Object.assign(state, { oms: o, strategies, runs });
+  renderOms();
+  $("nav-local").textContent = strategies.length || "";
+  if (current.name === "desk") views.desk.update();
+  if (omsChanged && current.name && current.name !== "desk") views[current.name].update(current.arg).catch(() => {});
+  if (openRunId) refreshLog();
+  if (finished || (omsChanged && o.backend)) refreshBooks();
+}
+async function refreshBooks() {
+  state.books = await api().strategy_books();
+  if (current.name === "desk") views.desk.update();
+}
+
+// ---------- run log drawer ----------
+async function openLog(id) {
+  openRunId = id;
+  $("drawer").classList.add("open"); $("scrim").classList.add("open");
+  $("log-text").textContent = "Loading…";
+  refreshLog();
+}
+async function refreshLog() {
+  const id = openRunId; if (!id) return;
+  const { run, text } = await api().run_log(id);
+  if (id !== openRunId || !run.id) return;
+  $("log-title").textContent = run.strategy_id || run.notebook;
+  $("log-sub").innerHTML = `${badge(run.status)} ${run.version ? `<span class="chip">${esc(run.version)}</span>` : '<span class="faint">working code</span>'} · ${run.trigger}${run.dry_run ? " · test run" : ""} · started ${new Date(run.started_at).toLocaleString()} · ${esc(run.summary || "")}`;
+  const pre = $("log-text"), atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;
+  pre.textContent = text || (run.status === "queued" || run.status === "running" ? "Starting kernel…" : "No output.");
+  if (atBottom) pre.scrollTop = pre.scrollHeight;
+  $("log-stop").hidden = !(run.status === "running" || run.status === "queued");
+  $("log-reveal").disabled = !run.output_path;
+}
+function closeOverlays() {
+  openRunId = null; schedNotebook = null; versionsFor = null;
+  ["drawer", "vdrawer", "scrim", "sched", "newstrat"].forEach((id) => $(id).classList.remove("open"));
+}
+
+// ---------- versions drawer ----------
+let versionsFor = null, diffOpen = null;
+async function openVersions(sid) {
+  versionsFor = sid; diffOpen = null;
+  $("vdrawer").classList.add("open"); $("scrim").classList.add("open");
+  renderVersions();
+}
+async function renderVersions(keepForm) {
+  const sid = versionsFor; if (!sid) return;
+  const { strategy: s, next_label } = await api().versions(sid);
+  const form = keepForm ? { label: $("v-label")?.value, name: $("v-name")?.value, note: $("v-note")?.value } : null;
+  $("v-title").textContent = `Versions · ${sid}`;
+  $("v-sub").innerHTML = "Save a copy of your code whenever it works, so you can always go back.";
+  const unchanged = !!s.matches_version;
+  const versions = [...s.versions].reverse();
+  $("v-body").innerHTML = `
+    <div class="vsummary">
+      <div class="vtile"><label>Your code right now</label>${
+        !s.versions.length ? "<b>Not saved yet</b>" :
+        unchanged ? `<b>Same as <span class="chip">${esc(s.matches_version)}</span></b>` : '<b class="warnc">Unsaved changes</b>'}</div>
+      <div class="vtile"><label>Scheduled runs use</label><b>${s.scheduled_version ? `<span class="chip">${esc(s.scheduled_version)}</span>` : "Your latest code"}</b></div>
+    </div>
+    <div class="panel panel-body vsave">
+      ${unchanged ? `<p class="muted" style="margin:0">Nothing new to save. Edit the code, then come back.</p>` : `
+      <h2>Save this code as a version</h2>
+      <div class="vform">
+        <label class="f">Label<input id="v-label" value="${esc(form?.label ?? next_label)}" /></label>
+        <label class="f">What changed<input id="v-name" placeholder="e.g. Added volatility filter" value="${esc(form?.name ?? "")}" /></label>
+        <label class="f full">Notes (optional)<input id="v-note" placeholder="Why, results, anything to remember" value="${esc(form?.note ?? "")}" /></label>
+        <div class="full actions" style="justify-content:flex-end">
+          ${s.versions.length ? `<button class="btn ghost" data-diff="${esc(s.latest_version)}">See changes since ${esc(s.latest_version)}</button>` : ""}<button class="btn primary" id="v-save">Save version</button>
+        </div>
+      </div>`}
+    </div>
+    <div id="v-diff-top"></div>
+    <h2 class="vhist-title">History</h2>
+    ${versions.length ? `<div class="vtimeline">${versions.map((v) => {
+      const cur = v.label === s.matches_version, sch = v.label === s.scheduled_version;
+      return `<div class="vrow ${cur ? "current" : ""}">
+        <div class="vrow-top">
+          <span class="chip">${esc(v.label)}</span>
+          <b class="vname">${esc(v.name || "Untitled")}</b>
+          ${cur ? '<span class="badge succeeded">current</span>' : ""}
+          ${sch ? '<span class="badge plan_only">scheduled</span>' : ""}
+          <span class="faint vdate" title="${esc(v.hash)}">${when(v.created_at)}</span>
+        </div>
+        ${v.note ? `<p class="vnote">${esc(v.note)}</p>` : ""}
+        <div class="vrow-actions">
+          <button class="btn sm" data-vrun="${esc(v.label)}">Run</button>
+          <button class="btn sm" data-vdry="${esc(v.label)}">Test run</button>
+          ${cur ? "" : `<button class="linkish" data-diff="${esc(v.label)}">Compare</button><button class="linkish" data-vrestore="${esc(v.label)}">Restore</button>`}
+          <button class="linkish" data-vsched="${sch ? "" : esc(v.label)}">${sch ? "Stop using for schedule" : "Use for schedule"}</button>
+          <button class="linkish danger" data-vdelete="${esc(v.label)}">Delete</button>
+        </div>
+        <div id="diff-${esc(v.label)}"></div>
+      </div>`; }).join("")}</div>` : `<div class="card empty">No versions yet. Save one above when the code works.</div>`}
+    <div class="danger-zone">
+      <h2 style="margin-bottom:6px">Delete strategy</h2>
+      <p class="muted" style="margin:0 0 10px;font-size:13px">If it never traded, it's deleted from this app and its folder goes to the Trash. If it traded, it's removed from My strategies but its code and record are kept under Strategies → Removed. You'll see exactly which before anything happens.</p>
+      <button class="btn danger" data-delete="${esc(sid)}">Delete ${esc(sid)}…</button>
+    </div>`;
+  if (diffOpen) showDiff(diffOpen, true);
+}
+async function showDiff(label, rerender) {
+  const box = $("diff-" + label) || $("v-diff-top");
+  if (!rerender && diffOpen === label) { diffOpen = null; box.innerHTML = ""; return; }
+  document.querySelectorAll('[id^="diff-"], #v-diff-top').forEach((el) => (el.innerHTML = ""));
+  diffOpen = label;
+  const res = await api().diff(versionsFor, label, "working");
+  if (!res.ok) return toast(res.error, true);
+  const lines = res.text ? res.text.split("\n") : [];
+  box.innerHTML = `<div class="diff">${lines.length ? lines.map((l) => `<div class="${l.startsWith("+++") || l.startsWith("---") ? "hunk" : l.startsWith("@@") ? "hunk" : l.startsWith("+") ? "add" : l.startsWith("-") ? "del" : ""}">${esc(l) || " "}</div>`).join("") : '<div class="muted">No code differences.</div>'}</div>`;
+}
+
+// ---------- schedule dialog ----------
+function openSchedule(sid) {
+  const s = state.strategies.find((x) => x.strategy_id === sid);
+  schedNotebook = sid;
+  const sc = s.schedule || { hour: 15, minute: 40, weekdays: [1, 2, 3, 4, 5], enabled: true };
+  $("sched-version").innerHTML = `<option value="">Working code (latest edits${s.source === "linked" ? " to the linked file" : ""})</option>` +
+    [...s.versions].reverse().map((v) => `<option value="${esc(v.label)}" ${v.label === s.scheduled_version ? "selected" : ""}>${esc(v.label)} · ${esc(v.name)}</option>`).join("");
+  $("sched-title").textContent = "Schedule " + (s.strategy_id || s.title);
+  $("sched-enabled").checked = s.schedule ? sc.enabled : true;
+  $("sched-time").value = String(sc.hour).padStart(2, "0") + ":" + String(sc.minute).padStart(2, "0");
+  schedDays = new Set(sc.weekdays);
+  renderDays(); updateEt();
+  $("sched").classList.add("open"); $("scrim").classList.add("open");
+}
+function renderDays() {
+  $("sched-days").innerHTML = DAYS.map(([n, l]) => `<button class="day ${schedDays.has(n) ? "on" : ""}" data-day="${n}">${l === "Thu" || l === "Sun" ? l.slice(0, 2) : l[0]}</button>`).join("");
+}
+function updateEt() {
+  const [h, m] = $("sched-time").value.split(":").map(Number);
+  const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  $("sched-et").textContent = local === "America/New_York" || isNaN(h) ? "" : "= " + etOf(h, m);
+}
+
+// ---------- events ----------
+document.addEventListener("click", async (e) => {
+  if (e.target.closest("#v-save")) {
+    const btn = $("v-save"); btn.disabled = true;
+    const res = await api().save_version(versionsFor, $("v-label").value, $("v-name").value, $("v-note").value);
+    btn.disabled = false;
+    if (!res.ok) return toast(res.error, true);
+    toast(`Saved ${res.version.label} · ${res.version.name}`); diffOpen = null; refresh(); return renderVersions();
+  }
+  const toggle = e.target.closest("[data-menu]");
+  if (toggle) {
+    openMenu = openMenu === toggle.dataset.menu ? null : toggle.dataset.menu;
+    if (current.name === "desk") views.desk.update();
+    return;
+  }
+  if (openMenu && !e.target.closest(".menu .info")) {  // any other click closes an open menu
+    openMenu = null;
+    if (current.name === "desk") setTimeout(() => views.desk.update(), 0);
+  }
+  const t = e.target.closest("[data-run],[data-dry],[data-sched],[data-log],[data-stop],[data-day],[data-code],[data-reveal],[data-new],[data-folder],[data-start-oms],[data-cancel],[data-mode],[data-leg-add],[data-leg-remove],[data-close],[data-versions],[data-vrun],[data-vdry],[data-diff],[data-vsched],[data-vrestore],[data-vdelete],[data-template],[data-origin],[data-kind],[data-range],[data-delete],[data-restore],[data-href]");
+  if (!t) return;
+  if (t.dataset.href && !e.target.closest("a")) { location.hash = t.dataset.href; return; }
+  if (t.dataset.log === "") return;
+  if (t.dataset.range) {
+    const [id, r] = t.dataset.range.split(":");
+    chartState[id].range = r;
+    t.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === t));
+    return loadChart(id, chartState[id].fetcher);
+  }
+  if (t.dataset.delete) return deleteFlow(t.dataset.delete);
+  if (t.dataset.restore) {
+    const res = await api().restore_strategy(t.dataset.restore);
+    if (!res.ok) return toast(res.error, true);
+    toast(`${t.dataset.restore} restored`); await refresh(); refreshBooks(); return route();
+  }
+  if (t.dataset.close !== undefined) return closeOverlays();
+  if (t.dataset.versions) return openVersions(t.dataset.versions);
+  if (t.dataset.code) { const r = await api().open_code(t.dataset.code); if (!r.ok) toast(r.error, true); return; }
+  if (t.dataset.reveal) return api().reveal(t.dataset.reveal);
+  if (t.dataset.template) {
+    const pre = $("tpl"); pre.style.display = "block";
+    pre.textContent = t.dataset.template === "ipynb" ? notebookAsText(await api().template("ipynb")) : await api().template("py");
+    return;
+  }
+  if (t.dataset.origin) { newStrat.origin = t.dataset.origin; return renderNewStrat(); }
+  if (t.dataset.kind) { newStrat.kind = t.dataset.kind; return renderNewStrat(); }
+  if (t.dataset.diff) return showDiff(t.dataset.diff);
+  if (t.dataset.vrun || t.dataset.vdry) {
+    const label = t.dataset.vrun || t.dataset.vdry, dry = !!t.dataset.vdry;
+    const res = await api().run_strategy(versionsFor, dry, label);
+    if (!res.ok) return toast(res.error, true);
+    toast(`${dry ? "Test run" : "Run"} of ${label} started`); const sid = versionsFor; closeOverlays(); openLog(res.run_id); refresh();
+    return;
+  }
+  if (t.dataset.vsched !== undefined) {
+    const res = await api().set_scheduled_version(versionsFor, t.dataset.vsched || null);
+    if (!res.ok) return toast(res.error, true);
+    toast(t.dataset.vsched ? `Scheduled runs will use ${t.dataset.vsched}` : "Scheduled runs will use the working code");
+    refresh(); return renderVersions(true);
+  }
+  if (t.dataset.vrestore) {
+    const s = state.strategies.find((x) => x.strategy_id === versionsFor);
+    if (!confirm(`Replace the working code with ${t.dataset.vrestore}?\n\n${s.path}\n\nUnsaved changes in that file will be lost. Save them as a version first if you want to keep them.`)) return;
+    const res = await api().restore_version(versionsFor, t.dataset.vrestore);
+    if (!res.ok) return toast(res.error, true);
+    toast(`Working code restored to ${t.dataset.vrestore}`); refresh(); return renderVersions();
+  }
+  if (t.dataset.vdelete) {
+    if (!confirm(`Delete saved version ${t.dataset.vdelete}? Its snapshot file is removed.`)) return;
+    const res = await api().delete_version(versionsFor, t.dataset.vdelete);
+    if (!res.ok) return toast(res.error, true);
+    toast(`Deleted ${t.dataset.vdelete}`); refresh(); return renderVersions(true);
+  }
+
+  if (t.dataset.day) { const n = +t.dataset.day; schedDays.has(n) ? schedDays.delete(n) : schedDays.add(n); renderDays(); return; }
+  if (t.dataset.sched) return openSchedule(t.dataset.sched);
+  if (t.dataset.log) return openLog(t.dataset.log);
+  if (t.dataset.folder !== undefined) return api().open_strategies_folder();
+  if (t.dataset.startOms !== undefined) return toggleOms();
+  if (t.dataset.new !== undefined) return openNewStrat();
+  if (t.dataset.mode) { ticket.mode = t.dataset.mode; return views.order.update(); }
+  if (t.dataset.legAdd !== undefined) { ticket.legs = Math.min(4, ticket.legs + 1); return views.order.update(); }
+  if (t.dataset.legRemove !== undefined) { ticket.legs = Math.max(2, ticket.legs - 1); return views.order.update(); }
+  if (t.dataset.cancel) {
+    t.disabled = true;
+    try { await oms("DELETE", `/api/orders/${t.dataset.cancel}`); toast("Cancel sent to Alpaca"); } catch (err) { toast(err.message, true); }
+    return views[current.name].update(current.arg);
+  }
+  if (t.dataset.stop) { await api().stop_run(t.dataset.stop); toast("Stopping run…"); return refresh(); }
+  const nb = t.dataset.run || t.dataset.dry, dry = !!t.dataset.dry;
+  t.disabled = true;
+  const res = await api().run_strategy(nb, dry);
+  if (!res.ok) toast(res.error, true);
+  else { toast(dry ? "Test run started" : "Run started"); openLog(res.run_id); }
+  refresh();
+});
+
+$("oms-toggle").onclick = toggleOms;
+$("open-dash").onclick = () => api().open_dashboard();
+$("log-close").onclick = closeOverlays;
+$("scrim").onclick = closeOverlays;
+$("log-stop").onclick = async () => { await api().stop_run(openRunId); toast("Stopping run…"); };
+$("log-reveal").onclick = () => api().reveal_output(openRunId);
+$("sched-time").oninput = updateEt;
+$("sched-save").onclick = async () => {
+  const [h, m] = $("sched-time").value.split(":").map(Number);
+  const enabled = $("sched-enabled").checked;
+  if (enabled && !schedDays.size) return toast("Pick at least one day", true);
+  const pinned = await api().set_scheduled_version(schedNotebook, $("sched-version").value || null);
+  if (!pinned.ok) return toast(pinned.error, true);
+  const res = await api().set_schedule(schedNotebook, h, m, [...schedDays], enabled);
+  if (!res.ok) return toast(res.error, true);
+  toast(enabled ? `Scheduled for ${fmtTime(h, m)}` : "Schedule turned off");
+  closeOverlays(); refresh();
+};
+// ---------- add-strategy dialog ----------
+let newStrat = { origin: "template", kind: "py", file: null };
+async function openNewStrat() {
+  newStrat = { origin: "template", kind: "py", file: null };
+  $("ns-title").value = ""; $("ns-new-id").value = "";
+  $("newstrat").classList.add("open"); $("scrim").classList.add("open");
+  const sel = $("ns-id");
+  sel.innerHTML = `<option value="">Loading OMS strategies…</option>`;
+  const res = await api().oms_strategy_choices();
+  const free = res.choices.filter((c) => !c.local), taken = res.choices.filter((c) => c.local);
+  sel.innerHTML = (res.ok ? "" : `<option value="" disabled>OMS not running: ${esc(res.error)}</option>`) +
+    (free.length ? `<optgroup label="Registered in the OMS">${free.map((c) => `<option value="${esc(c.id)}">${esc(c.id)} · ${money(c.cash_remaining)} of ${money(c.cash_budget)} left</option>`).join("")}</optgroup>` : "") +
+    (taken.length ? `<optgroup label="Already on this laptop">${taken.map((c) => `<option value="${esc(c.id)}" disabled>${esc(c.id)}</option>`).join("")}</optgroup>` : "") +
+    `<option value="__new">＋ Register a new strategy in the OMS…</option>`;
+  sel.value = free.length ? free[0].id : "__new";
+  renderNewStrat();
+}
+function renderNewStrat() {
+  document.querySelectorAll("#newstrat [data-origin]").forEach((b) => b.classList.toggle("on", b.dataset.origin === newStrat.origin));
+  document.querySelectorAll("#newstrat [data-kind]").forEach((b) => b.classList.toggle("on", b.dataset.kind === newStrat.kind));
+  $("ns-template-kind").style.display = newStrat.origin === "template" ? "" : "none";
+  $("ns-file-row").style.display = newStrat.origin === "template" ? "none" : "";
+  $("ns-file").textContent = newStrat.file ? newStrat.file.replace(/^\/Users\/[^/]+/, "~") : "No file chosen";
+  $("ns-register").style.display = $("ns-id").value === "__new" ? "" : "none";
+  $("ns-create").textContent = newStrat.origin === "link" ? "Link strategy" : newStrat.origin === "upload" ? "Upload strategy" : "Create from template";
+  $("ns-hint").innerHTML = {
+    template: "Creates a file in <code>strategies/&lt;id&gt;/</code> with the 3 lines below already written. You only fill in <code>target</code>.",
+    link: "Your file stays where it is. Every run reads the latest save, and it runs from that file's folder, so paths like <code>models/</code> work.",
+    upload: "Copies your file into <code>strategies/&lt;id&gt;/</code>. Edit that copy from now on; your original isn't touched.",
+  }[newStrat.origin];
+}
+$("ns-id").onchange = renderNewStrat;
+$("ns-choose").onclick = async () => {
+  const path = await api().choose_file();
+  if (path) { newStrat.file = path; renderNewStrat(); }
+};
+$("ns-create").onclick = async () => {
+  const isNew = $("ns-id").value === "__new";
+  const sid = isNew ? $("ns-new-id").value.trim() : $("ns-id").value;
+  if (!sid) return toast("Pick an OMS strategy", true);
+  if (newStrat.origin !== "template" && !newStrat.file) return toast("Choose a .py or .ipynb file", true);
+  const origin = newStrat.origin === "template" ? `template_${newStrat.kind}` : newStrat.origin;
+  const btn = $("ns-create"); btn.disabled = true; btn.textContent = "Adding…";
+  const res = await api().new_strategy(sid, origin, $("ns-title").value, newStrat.file, isNew ? Number($("ns-budget").value) : null);
+  btn.disabled = false; renderNewStrat();
+  if (!res.ok) return toast(res.error, true);
+  toast(`Added ${sid}. ${res.strategy.kind === "ipynb" ? "Opening in JupyterLab" : "Opening in your editor"}`);
+  closeOverlays(); location.hash = "#/desk"; await refresh(); refreshBooks();
+};
+function notebookAsText(json) {
+  try {
+    return JSON.parse(json).cells.map((c) => (c.cell_type === "markdown" ? "# [markdown]\n# " + [].concat(c.source).join("").replaceAll("\n", "\n# ") : [].concat(c.source).join(""))).join("\n\n# ─────────\n");
+  } catch { return json; }
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeOverlays(); });
+window.addEventListener("hashchange", route);
+
+window.addEventListener("pywebviewready", async () => {
+  setInterval(() => refresh().catch(console.error), 2000);
+  setInterval(() => refreshBooks().catch(console.error), 60000);
+  await refresh().catch(console.error);
+  route();
+  refreshBooks().catch(console.error);
+});
+</script>
+</body>
+</html>
