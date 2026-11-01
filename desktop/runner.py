@@ -24,7 +24,7 @@ from pathlib import Path
 import desk
 
 ORDER_SENT = re.compile(r"^(buy|sell|mleg)\b.* -> \w+ \(order ", re.M)
-ORDER_PLANNED = re.compile(r"would POST /api/orders", re.M)
+ORDER_PLANNED = re.compile(r"would POST /api/(?:predictions/paper/)?orders", re.M)
 FAILED_ORDER = re.compile(r"^\s+(buy|sell) \S+ failed:", re.M)
 PLAN_ONLY = re.compile(r"showing the plan only", re.I)
 

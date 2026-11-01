@@ -4,6 +4,7 @@ import { Shell } from "./Shell";
 import { Account } from "./pages/Account";
 import { OrderTicket } from "./pages/OrderTicket";
 import { PositionDetail } from "./pages/PositionDetail";
+import { Predictions } from "./pages/Predictions";
 import { Strategies } from "./pages/Strategies";
 import { StrategyDetail } from "./pages/StrategyDetail";
 import { Unlock } from "./pages/Unlock";
@@ -22,6 +23,7 @@ export function App() {
             <Route path="strategies/:id" element={<StrategyDetail />} />
             <Route path="positions/:symbol" element={<PositionDetail />} />
             <Route path="order" element={<OrderTicket />} />
+            <Route path="predictions" element={<Predictions />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

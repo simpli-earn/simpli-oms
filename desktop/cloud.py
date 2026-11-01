@@ -8,7 +8,7 @@ open and the OMS is running, so deleting the app or the folder doesn't lose it. 
     that one version file, strategy.json (listing only that version), models/ and any other
     support files in the folder, and the schedule's time and days (each laptop turns it on itself)
 
-runs/ (executed notebooks), hidden files, and caches stay local. A laptop that downloads the
+runs/ (executed notebooks), backtests/, hidden files, and caches stay local. A laptop that downloads the
 strategy gets the version as its working code too, with the version pinned for scheduled runs.
 
 Each upload bumps the cloud revision. This laptop remembers the revision and file hashes it last
@@ -80,7 +80,7 @@ def pack(sid: str) -> tuple[dict[str, bytes] | None, list[str]]:
     skipped: list[str] = []
     for p in sorted(d.rglob("*")):
         rel = p.relative_to(d)
-        if (not p.is_file() or rel.parts[0] in ("runs", "versions") or rel.as_posix() in (desk.MANIFEST, code_name)
+        if (not p.is_file() or rel.parts[0] in ("runs", "versions", "backtests") or rel.as_posix() in (desk.MANIFEST, code_name)
                 or p.suffix == ".tmp" or any(part.startswith(".") or part in SKIP_PARTS for part in rel.parts)):
             continue
         if p.stat().st_size > MAX_FILE_BYTES:

@@ -137,8 +137,8 @@ def check_code(path: Path, strategy_id: str) -> list[dict]:
             add("error", f"Syntax error on line {exc.lineno}: {exc.msg}")
     if "oms_client" not in text:
         add("warn", "Doesn't import oms_client, so it can't place orders through the OMS")
-    elif "OMS(" not in text:
-        add("warn", "Imports oms_client but never creates OMS()")
+    elif "OMS(" not in text and "PredictionMarkets(" not in text:
+        add("warn", "Imports oms_client but never creates OMS() or PredictionMarkets()")
     ids = set(HARDCODED_ID.findall(text))
     wrong = sorted(i for i in ids if i != strategy_id)
     if wrong:
@@ -224,7 +224,15 @@ def describe(sid: str) -> dict:
         "latest_version": versions[-1]["label"] if versions else None,
         "scheduled_version": m.get("scheduled_version"),
         "checks": check_code(path, sid),
+        "backtestable": exists and "PredictionMarkets(" in _safe_text(path),
     }
+
+
+def _safe_text(path: Path) -> str:
+    try:
+        return code_text(path)
+    except (OSError, ValueError):
+        return ""
 
 
 def _fill_template(text: str, title: str, sid: str) -> str:

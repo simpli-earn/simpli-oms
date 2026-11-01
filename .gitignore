@@ -17,3 +17,9 @@ strategies/*
 !strategies/templates/
 !strategies/README.md
 !strategies/requirements.txt
+!strategies/backtest.py
+!strategies/tests/
+
+# Backtest history downloads and results stay local.
+.cache/
+strategies/*/backtests/

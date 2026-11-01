@@ -157,3 +157,76 @@ class StrategyFile(Base):
     size: Mapped[int] = mapped_column(Integer)
     revision: Mapped[int] = mapped_column(Integer)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# Prediction-market paper trading. Separate cash from the Alpaca books above; fills are
+# simulated against the live Kalshi or Polymarket order book. Prices are dollars per contract.
+
+
+class PmAccount(Base):
+    __tablename__ = "pm_accounts"
+
+    strategy_id: Mapped[str] = mapped_column(ForeignKey("strategies.id"), primary_key=True)
+    cash_budget: Mapped[Decimal] = mapped_column(AMOUNT)
+    cash: Mapped[Decimal] = mapped_column(AMOUNT)
+    cash_reserved: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    realized_pnl: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    fees_paid: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PmOrder(Base):
+    __tablename__ = "pm_orders"
+    __table_args__ = (UniqueConstraint("strategy_id", "client_order_id"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    strategy_id: Mapped[str] = mapped_column(ForeignKey("pm_accounts.strategy_id"), index=True)
+    client_order_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    venue: Mapped[str] = mapped_column(String(16))
+    market_id: Mapped[str] = mapped_column(String(128), index=True)
+    title: Mapped[str] = mapped_column(String(500), default="")
+    outcome: Mapped[str] = mapped_column(String(8))
+    action: Mapped[str] = mapped_column(String(8))
+    type: Mapped[str] = mapped_column(String(8))
+    count: Mapped[Decimal] = mapped_column(AMOUNT)
+    limit_price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), index=True)
+    filled_count: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    avg_price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
+    fees: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    reserved: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    reject_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PmFill(Base):
+    __tablename__ = "pm_fills"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    order_id: Mapped[str | None] = mapped_column(ForeignKey("pm_orders.id"), nullable=True, index=True)
+    strategy_id: Mapped[str] = mapped_column(ForeignKey("pm_accounts.strategy_id"), index=True)
+    venue: Mapped[str] = mapped_column(String(16))
+    market_id: Mapped[str] = mapped_column(String(128))
+    outcome: Mapped[str] = mapped_column(String(8))
+    action: Mapped[str] = mapped_column(String(8))  # buy, sell, or settle
+    count: Mapped[Decimal] = mapped_column(AMOUNT)
+    price: Mapped[Decimal] = mapped_column(AMOUNT)
+    fee: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    filled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PmPosition(Base):
+    __tablename__ = "pm_positions"
+    __table_args__ = (UniqueConstraint("strategy_id", "venue", "market_id", "outcome"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    strategy_id: Mapped[str] = mapped_column(ForeignKey("pm_accounts.strategy_id"), index=True)
+    venue: Mapped[str] = mapped_column(String(16))
+    market_id: Mapped[str] = mapped_column(String(128))
+    outcome: Mapped[str] = mapped_column(String(8))
+    title: Mapped[str] = mapped_column(String(500), default="")
+    count: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    avg_price: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    realized_pnl: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

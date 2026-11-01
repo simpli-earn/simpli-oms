@@ -32,6 +32,18 @@ The app runs the file from its own folder with this folder's `.venv`, and sets `
 
 `oms_client` also has `buy`, `sell`, `order` (limit, options, multi-leg), `holdings`, `book`, `cancel`, `daily_id`, and `alpaca_keys` for market data.
 
+For Kalshi and Polymarket, use `PredictionMarkets()` instead of `OMS()`: `fund`, `markets`, `mentions`, `market`, `buy`, `sell`, `positions`, `account`. Orders are paper fills against the live order books. Two examples live in `templates/`: `kalshi_mentions.py` (Kalshi mention markets) and `poly_favorites.py` (Polymarket). Copy one into a strategy folder and change its `signal()`.
+
+## Backtesting prediction strategies
+
+A `PredictionMarkets` strategy can be replayed on historical prices without changes: click **Backtest** on its card in SimpliEarn Desk, or run
+
+```bash
+.venv/bin/python backtest.py kalshi-mentions --start 2026-10-01 --end 2026-10-31
+```
+
+The strategy runs every hour (`--step-hours`) and only sees data from before that moment, so use `pm.now()` and `pm.today()` instead of the system clock. Kalshi uses hourly bid/ask candles, with fills capped at 20% of each hour's volume (`--fill-cap`) and Kalshi's taker fee. Polymarket has one hourly price, so bid/ask is that price -/+ 1 cent (`--poly-half-spread`). Positions settle on each market's real result. By default the Kalshi universe is every Mentions series (`--series` to narrow it) and the Polymarket universe is the 200 busiest markets in the window (`--poly-markets`, `--poly-query`). Picking the busiest markets uses volume from the whole window, which flatters Polymarket results a little. History is cached in `strategies/.cache/`; results go to `<strategy>/backtests/<timestamp>/` (summary.json, equity.csv, trades.csv, log.txt). Run the engine's tests with `.venv/bin/python -m pytest tests`.
+
 ## Adding one
 
 In the app, **Add strategy** → pick the OMS strategy id → then choose one:

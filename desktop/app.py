@@ -6,6 +6,8 @@ The window is ui/index.html; its buttons call the methods on Api through pywebvi
 """
 from __future__ import annotations
 
+import csv
+import json
 import os
 import re
 import signal
@@ -63,6 +65,7 @@ class Api:
         self._cloud_lock = threading.Lock()
         self._cloud_wake = threading.Event()
         self.window = None
+        self._backtest: dict | None = None
 
     # OMS servers
 
@@ -121,6 +124,10 @@ class Api:
 
     def open_dashboard(self) -> None:
         subprocess.Popen(["open", DASHBOARD_URL])
+
+    def open_url(self, url: str) -> None:
+        if url.startswith(("https://kalshi.com/", "https://polymarket.com/")):
+            subprocess.Popen(["open", url])
 
 
     # strategies on this laptop
@@ -447,6 +454,68 @@ class Api:
         proc = subprocess.Popen(args, cwd=desk.DESKTOP, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         desk.update_run(run_id, pid=proc.pid)
         return {"ok": True, "run_id": run_id}
+
+    # backtests (prediction-market strategies only; see strategies/backtest.py)
+
+    def start_backtest(self, sid: str, start: str, end: str, step_hours: float = 1, series: str = "",
+                       poly_query: str = "") -> dict:
+        if sid not in desk.strategy_ids():
+            return {"ok": False, "error": f"{sid} is not set up on this laptop"}
+        if self._backtest and self._backtest["proc"].poll() is None:
+            return {"ok": False, "error": f"a backtest of {self._backtest['sid']} is still running"}
+        args = [str(desk.PYTHON), str(desk.STRATEGIES / "backtest.py"), sid, "--start", start, "--end", end,
+                "--step-hours", str(step_hours)]
+        if series.strip():
+            args += ["--series", *series.replace(",", " ").split()]
+        if poly_query.strip():
+            args += ["--poly-query", poly_query.strip()]
+        out = desk.LOGS / "backtest-out.json"
+        err = desk.LOGS / "backtest-progress.log"
+        proc = subprocess.Popen(args, cwd=desk.STRATEGIES, stdout=open(out, "w"), stderr=open(err, "w"),
+                                start_new_session=True)
+        self._backtest = {"sid": sid, "proc": proc, "out": out, "err": err, "started": time.time()}
+        return {"ok": True}
+
+    def backtest_status(self) -> dict:
+        bt = self._backtest
+        if not bt:
+            return {"running": False}
+        lines = [l for l in bt["err"].read_text(errors="replace").splitlines() if l.strip()] if bt["err"].exists() else []
+        code = bt["proc"].poll()
+        status = {"sid": bt["sid"], "running": code is None, "progress": lines[-1].strip() if lines else "Starting…",
+                  "elapsed": round(time.time() - bt["started"])}
+        if code is not None:
+            try:
+                status["summary"] = json.loads(bt["out"].read_text())
+            except (OSError, ValueError):
+                status["error"] = "\n".join(lines[-8:]) or f"backtest exited with code {code}"
+        return status
+
+    def stop_backtest(self) -> dict:
+        bt = self._backtest
+        if bt and bt["proc"].poll() is None:
+            os.killpg(bt["proc"].pid, signal.SIGTERM)
+        return {"ok": True}
+
+    def backtests(self, sid: str) -> list[dict]:
+        """Past backtests for a strategy, newest first, with each equity curve thinned for a sparkline."""
+        out = []
+        for d in sorted((desk.STRATEGIES / sid / "backtests").glob("*/summary.json"), reverse=True)[:12]:
+            try:
+                summary = json.loads(d.read_text())
+                rows = list(csv.DictReader(open(d.parent / "equity.csv")))
+            except (OSError, ValueError):
+                continue
+            step = max(1, len(rows) // 120)
+            summary["curve"] = [float(r["equity"]) for r in rows[::step]]
+            summary["output"] = str(d.parent)
+            out.append(summary)
+        return out
+
+    def reveal_path(self, path: str) -> None:
+        target = Path(path)
+        if target.exists() and desk.STRATEGIES in target.resolve().parents:
+            subprocess.Popen(["open", str(target)])
 
     def stop_run(self, run_id: str) -> dict:
         run = desk.get_run(run_id)

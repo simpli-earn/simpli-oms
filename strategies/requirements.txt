@@ -7,3 +7,4 @@ python-dotenv
 xgboost
 scikit-learn
 psycopg[binary]
+pytest>=8.3

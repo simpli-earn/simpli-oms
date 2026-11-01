@@ -104,6 +104,119 @@ export type SymbolDetail = {
   }>;
 };
 
+export type PredictionMarket = {
+  venue: string;
+  id: string;
+  title: string;
+  subtitle: string;
+  event: string;
+  category: string;
+  yes_bid: number | null;
+  yes_ask: number | null;
+  last: number | null;
+  volume_24h: number | null;
+  volume: number | null;
+  close_time: string | null;
+  status: string | null;
+  url: string | null;
+  tradable: boolean;
+  outcomes?: Array<{ name: string; price: number | null }>;
+  rules?: string;
+  book?: { bids: Array<[number, number]>; asks: Array<[number, number]> };
+};
+
+export type PredictionStatus = {
+  venues: Array<{ id: string; name: string; env: string; tradable: boolean }>;
+  kalshi_demo_configured: boolean;
+  paper_ready: boolean;
+  mentions_scan: { done: number; total: number; running: boolean };
+};
+
+export type PaperAccount = {
+  strategy_id: string;
+  cash_budget: number;
+  cash: number;
+  cash_reserved: number;
+  positions_value: number;
+  equity: number;
+  realized_pnl: number;
+  unrealized_pnl: number;
+  fees_paid: number;
+  total_pnl: number;
+  open_positions: number;
+  created_at: string;
+};
+
+export type PaperPosition = {
+  strategy_id: string;
+  venue: string;
+  market_id: string;
+  outcome: string;
+  title: string;
+  count: number;
+  avg_price: number;
+  mark: number | null;
+  market_value: number | null;
+  unrealized_pnl: number | null;
+  realized_pnl: number;
+};
+
+export type PaperOrder = {
+  id: string;
+  strategy_id: string;
+  client_order_id: string | null;
+  venue: string;
+  market_id: string;
+  title: string;
+  outcome: string;
+  action: string;
+  type: string;
+  count: number;
+  limit_price: number | null;
+  status: string;
+  filled_count: number;
+  avg_price: number | null;
+  fees: number;
+  reject_reason: string | null;
+  created_at: string;
+};
+
+export type PaperBook = {
+  account: PaperAccount;
+  positions: PaperPosition[];
+  orders: PaperOrder[];
+};
+
+export type KalshiOrder = {
+  order_id: string;
+  client_order_id: string | null;
+  ticker: string;
+  side: string | null;
+  action: string | null;
+  type: string | null;
+  status: string;
+  yes_price: number | null;
+  no_price: number | null;
+  count: number | null;
+  filled: number | null;
+  remaining: number | null;
+  created_time: string | null;
+};
+
+export type KalshiPortfolio = {
+  balance: number | null;
+  portfolio_value: number | null;
+  positions: Array<{
+    ticker: string;
+    position: number | null;
+    exposure: number | null;
+    realized_pnl: number | null;
+    fees_paid: number | null;
+    traded: number | null;
+  }>;
+  orders: KalshiOrder[];
+};
+
 export class ApiError extends Error {
   status: number;
 
