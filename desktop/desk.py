@@ -85,6 +85,53 @@ def code_text(path: Path) -> str:
     return path.read_text()
 
 
+MAX_VIEW_CHARS = 1_000_000
+ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def file_view(name: str, data: bytes) -> dict:
+    """A file's contents for the app's file viewer: notebooks as cells (with text outputs),
+    JSON pretty-printed, other text as is, binaries by size only."""
+    try:
+        if b"\0" in data[:8192]:
+            raise UnicodeDecodeError("utf-8", b"", 0, 1, "binary")
+        text = data.decode()
+    except UnicodeDecodeError:
+        return {"kind": "binary", "size": len(data)}
+    if name.endswith(".ipynb"):
+        try:
+            cells = []
+            for c in json.loads(text).get("cells", []):
+                outs = []
+                for o in c.get("outputs", []):
+                    if o.get("output_type") == "stream":
+                        outs.append(_source({"source": o.get("text", "")}))
+                    elif o.get("output_type") == "error":
+                        outs.append(ANSI.sub("", "\n".join(o.get("traceback", []))))
+                    elif "text/plain" in o.get("data", {}):
+                        outs.append(_source({"source": o["data"]["text/plain"]}) + "\n")
+                cells.append({"type": c.get("cell_type"), "source": _source(c), "output": "".join(outs)[:20_000]})
+            return {"kind": "notebook", "cells": cells, "size": len(data)}
+        except (ValueError, AttributeError):
+            pass
+    if name.endswith(".json"):
+        try:
+            text = _pretty_json(json.loads(text))
+        except ValueError:
+            pass
+    return {"kind": "text", "text": text[:MAX_VIEW_CHARS], "truncated": len(text) > MAX_VIEW_CHARS, "size": len(data)}
+
+
+def _pretty_json(obj, pad: str = "") -> str:
+    """Indented JSON, but a list of plain values stays on one line (model files are mostly those)."""
+    inner = pad + "  "
+    if isinstance(obj, dict) and obj:
+        return "{\n" + ",\n".join(f"{inner}{json.dumps(k)}: {_pretty_json(v, inner)}" for k, v in obj.items()) + f"\n{pad}}}"
+    if isinstance(obj, list) and any(isinstance(v, (dict, list)) for v in obj):
+        return "[\n" + ",\n".join(inner + _pretty_json(v, inner) for v in obj) + f"\n{pad}]"
+    return json.dumps(obj)
+
+
 def code_hash(path: Path) -> str:
     return hashlib.sha256(code_text(path).encode()).hexdigest()[:12]
 
@@ -211,7 +258,9 @@ def describe(sid: str) -> dict:
     return {
         "strategy_id": sid,
         "title": m.get("title") or title,
-        "description": desc,
+        "name": m.get("title") or "",  # set by you (Edit details); title falls back to the file's heading
+        "description": m.get("description") or desc,
+        "custom_description": m.get("description") or "",
         "kind": path.suffix.lstrip("."),
         "source": m["source"]["kind"],
         "origin": m.get("origin", m["source"]["kind"]),
@@ -225,6 +274,19 @@ def describe(sid: str) -> dict:
         "scheduled_version": m.get("scheduled_version"),
         "checks": check_code(path, sid),
     }
+
+
+def set_details(sid: str, name: str, description: str) -> None:
+    """The name and description you give a strategy. Stored in strategy.json, so they're
+    backed up and shared with the cloud copy. Empty means "use the code's own heading"."""
+    name, description = name.strip(), description.strip()
+    if len(name) > 80:
+        raise ValueError("Keep the name under 80 characters")
+    if len(description) > 500:
+        raise ValueError("Keep the description under 500 characters")
+    m = read_manifest(sid)
+    m["title"], m["description"] = name or None, description or None
+    write_manifest(sid, m)
 
 
 def _fill_template(text: str, title: str, sid: str) -> str:
@@ -478,6 +540,29 @@ def reap_dead_runs() -> None:
                     "finished_at=? where id=?",
                     (now(), r["id"]),
                 )
+
+
+# ---------------------------------------------------------------- who needs the OMS running
+
+APP_PID = DATA / "app.pid"  # written while the app window is open
+
+
+def app_open() -> bool:
+    try:
+        return pid_alive(int(APP_PID.read_text()))
+    except (OSError, ValueError):
+        return False
+
+
+def oms_needed(except_run: str | None = None) -> bool:
+    """The app is open or a run (other than except_run) is still going. The app starts the OMS
+    when it opens; a run starts it if it's down. Whoever finishes last stops it."""
+    if app_open():
+        return True
+    reap_dead_runs()
+    with db() as conn:
+        rows = conn.execute("select id from runs where status in ('queued','running')").fetchall()
+    return any(r["id"] != except_run for r in rows)
 
 
 # ---------------------------------------------------------------- deleted / removed strategies

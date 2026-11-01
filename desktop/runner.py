@@ -169,6 +169,12 @@ def main() -> int:
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, stop)
+    sys.path.insert(0, str(desk.STRATEGIES))
+    import oms_client
+    try:  # the OMS may be down when the app is closed; the run starts it and stops it after
+        oms_client.ensure_server()
+    except RuntimeError as exc:
+        return fail(f"couldn't start the OMS: {exc}")
     try:
         if code.suffix == ".ipynb":
             text, error = run_notebook(code, cwd, log_path, out_path, run_id)
@@ -190,6 +196,13 @@ def main() -> int:
         status, summary, orders = classify(text, error, args.dry_run)
     desk.update_run(run_id, status=status, summary=summary[:300], orders=orders, finished_at=desk.now())
     print(f"{sid}: {status} - {summary}")
+    try:  # so other laptops see this run even when the app is closed here
+        import cloud
+        cloud.report_installs(app_open=desk.app_open())
+    except Exception:
+        pass
+    if not desk.oms_needed(except_run=run_id):
+        oms_client.stop_server()
     return 0 if status in ("succeeded", "plan_only") else 1
 
 

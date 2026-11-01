@@ -17,6 +17,11 @@ synced (desk.db, cloud_sync), so it can tell three cases apart:
     changed here only      upload
     changed in the cloud   "update" (download it with one click)
     changed in both        "conflict" (keep this laptop's copy, or take the cloud's)
+
+The app's Strategies page lists every strategy; one with a cloud copy that isn't on this laptop
+can be downloaded, which sets it up here and turns its schedule on. Removing a strategy from
+this laptop never touches the cloud. Deleting it on the Strategies page empties the cloud copy
+(the backend keeps the row, with no files and a higher revision, so other laptops can tell).
 """
 from __future__ import annotations
 
@@ -25,6 +30,7 @@ import hashlib
 import json
 import platform
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 
@@ -55,7 +61,7 @@ def _call(method: str, path: str, **kwargs) -> dict | list:
         except ValueError:
             detail = None
         raise CloudError(r.status_code, detail if isinstance(detail, str) else r.reason)
-    return r.json()
+    return r.json() if r.content else {}
 
 
 def _sha(data: bytes) -> str:
@@ -145,6 +151,8 @@ def sync_one(sid: str, cloud: dict | None) -> dict:
             "updated_at": cloud and cloud["updated_at"], "skipped": skipped}
     if files is None:
         return {**info, "state": "no_version"}
+    if cloud and not cloud["files"]:  # deleted on the Strategies page (here or on another laptop)
+        return {**info, "state": "cloud_deleted"}
     hashes = {p: _sha(b) for p, b in files.items()}
     sched = schedule_payload(sid)
     base = _base(sid)
@@ -177,7 +185,8 @@ def sync_one(sid: str, cloud: dict | None) -> dict:
 
 def sync_all() -> dict:
     """Upload every local strategy's changes. Returns what the app shows:
-    {online, strategies: {id: {state, ...}}, available: [cloud strategies not on this laptop]}."""
+    {online, strategies: {id: {state, ...}}, all: [every cloud strategy],
+    available: [cloud strategies not on this laptop]}."""
     try:
         listing = _call("GET", "/api/strategy-code")
     except CloudError as exc:
@@ -193,18 +202,89 @@ def sync_all() -> dict:
         except (OSError, ValueError, KeyError) as exc:
             out[sid] = {"state": "error", "error": f"Couldn't read the folder: {exc}"}
     gone = {sid for sid, f in desk.flags().items() if f["state"] == "deleted"}
-    available = [c for sid, c in cloud.items() if sid not in local and sid not in gone]
-    return {"online": True, "strategies": out, "available": available}
+    kept = [c for c in listing if c["files"]]  # an emptied copy was deleted
+    available = [c for c in kept if c["strategy_id"] not in local and c["strategy_id"] not in gone]
+    return {"online": True, "strategies": out, "all": kept, "available": available}
+
+
+# ---------------------------------------------------------------- which laptops have what
+
+def report_installs(app_open: bool = True) -> None:
+    """Tell the OMS which strategies this laptop has and how each runs here (shown in a
+    strategy's Settings). Needs backend/add_strategy_installs.sql; a 503 says so."""
+    items = []
+    for sid in desk.strategy_ids():
+        try:
+            version = desk.read_manifest(sid).get("scheduled_version")
+        except (OSError, ValueError):
+            continue
+        s, r = desk.get_schedule(sid), desk.last_run(sid)
+        items.append({
+            "strategy_id": sid, "version": version,
+            "schedule": {"hour": s["hour"], "minute": s["minute"], "weekdays": s["weekdays"]} if s and s["enabled"] and s["weekdays"] else None,
+            "last_run_at": r["started_at"] if r else None,
+            "last_run_status": (r["status"] + (" (test)" if r["dry_run"] else "")) if r else None,
+        })
+    _call("PUT", f"/api/installs/{quote(platform.node(), safe='')}", json={"strategies": items, "app_open": app_open})
+
+
+def installs(sid: str) -> list[dict]:
+    return _call("GET", f"/api/strategies/{sid}/installs")
 
 
 # ---------------------------------------------------------------- downloading
 
+_viewed: dict[str, dict[str, bytes]] = {}  # cloud copies opened in the file viewer
+
+
+def list_files(sid: str) -> dict:
+    """The cloud copy's files for the file viewer: {files: [{path, size}], marks: {path: label},
+    open: path to show first, revision, updated_by, updated_at}."""
+    remote = _call("GET", f"/api/strategies/{sid}/code")
+    files = _viewed[sid] = {f["path"]: base64.b64decode(f["content_b64"]) for f in remote["files"]}
+    manifest = json.loads(files.get(desk.MANIFEST, b"{}"))
+    marks = {v["file"]: f"{v['label']} · {v.get('name', '')} · scheduled" for v in manifest.get("versions", [])}
+    return {"files": [{"path": p, "size": len(b)} for p, b in sorted(files.items())], "marks": marks,
+            "open": next(iter(marks), desk.MANIFEST), "revision": remote["revision"],
+            "updated_by": remote["updated_by"], "updated_at": remote["updated_at"]}
+
+
+def read_file(sid: str, path: str) -> dict:
+    if path not in _viewed.get(sid, {}):
+        list_files(sid)
+    if path not in _viewed[sid]:
+        raise CloudError(404, f"the cloud copy has no {path}")
+    return desk.file_view(path, _viewed[sid][path])
+
+
+def delete(sid: str) -> None:
+    """Empty the cloud copy. The revision goes up, so a laptop that still has the strategy
+    sees "deleted from the cloud" instead of quietly uploading it again."""
+    try:
+        remote = _call("GET", f"/api/strategies/{sid}/code", params={"content": "false"})
+    except CloudError as exc:
+        if exc.status == 404:
+            return
+        raise
+    if remote["files"]:
+        _call("PUT", f"/api/strategies/{sid}/code", json={
+            "base_revision": remote["revision"], "files": [], "deleted": [f["path"] for f in remote["files"]],
+            "schedule": None, "updated_by": platform.node(), "force": False})
+    forget(sid)
+
+
+def forget(sid: str) -> None:
+    """Drop what this laptop remembers about syncing a strategy (it's no longer here)."""
+    with desk.db() as conn:
+        conn.execute("delete from cloud_sync where strategy = ?", (sid,))
+
+
 def download(sid: str) -> None:
     """Write the cloud copy into strategies/<sid>/.
 
-    A fresh setup gets the cloud's version as its working code and pinned for scheduled runs.
-    An update adds that version to this laptop's versions and pins it; the working draft and
-    the other saved versions here are left alone."""
+    A fresh setup gets the cloud's version as its working code and pinned for scheduled runs,
+    and the cloud's schedule turned on. An update adds that version to this laptop's versions
+    and pins it; the working draft and the other saved versions here are left alone."""
     remote = _call("GET", f"/api/strategies/{sid}/code")
     files = {f["path"]: base64.b64decode(f["content_b64"]) for f in remote["files"]}
     if desk.MANIFEST not in files:
@@ -247,10 +327,10 @@ def download(sid: str) -> None:
     s = remote.get("schedule")
     if s and s.get("weekdays"):
         mine = desk.get_schedule(sid)
-        if mine and mine["enabled"]:
+        if not local_m or (mine and mine["enabled"]):  # an import, or an update to a schedule that's on
             scheduler.apply(sid, s["hour"], s["minute"], s["weekdays"], True)
-        else:  # a new laptop gets the time and days, and turns the schedule on itself
-            desk.save_schedule(sid, s["hour"], s["minute"], s["weekdays"], False)
+    if not local_m:
+        desk.set_flag(sid, None)  # importing undoes a delete in the app here
     _save_base(sid, remote["revision"])
 
 

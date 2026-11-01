@@ -7,6 +7,7 @@ The window is ui/index.html; its buttons call the methods on Api through pywebvi
 from __future__ import annotations
 
 import os
+import platform
 import re
 import signal
 import subprocess
@@ -118,6 +119,20 @@ class Api:
             oms_client.stop_server()
         threading.Event().wait(1)
         return self.oms_status()
+
+    def shutdown(self) -> None:
+        """The window closed: stop the dashboard, and the backend unless a run still needs it
+        (that run stops it when it finishes)."""
+        desk.APP_PID.unlink(missing_ok=True)
+        pid = _read_pid(FRONTEND_PID)
+        if pid:
+            try:
+                os.killpg(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        FRONTEND_PID.unlink(missing_ok=True)
+        if not desk.oms_needed() and _read_pid(BACKEND_PID):
+            oms_client.stop_server()
 
     def open_dashboard(self) -> None:
         subprocess.Popen(["open", DASHBOARD_URL])
@@ -283,31 +298,53 @@ class Api:
             "linked": (desk.folder(sid) / desk.MANIFEST).exists() and desk.read_manifest(sid)["source"]["kind"] == "linked",
         }
 
-    def delete_strategy(self, sid: str) -> dict:
-        """Never traded: delete it from this app (records and local folder, to the Trash).
-        Traded: remove it from My strategies, keep its code and folder, and list it under
-        Strategies -> Removed with a snapshot of its final numbers."""
-        st = self.strategy_status(sid)
+    def _off_this_laptop(self, sid: str) -> str | None:
+        """Turn the schedule off and move the folder to the Trash. Returns an error, or None."""
         scheduler.remove(sid)
         desk.save_schedule(sid, 0, 0, [], False)
+        if (desk.folder(sid) / desk.MANIFEST).exists():
+            from Foundation import NSURL, NSFileManager
+            ok, _, err = NSFileManager.defaultManager().trashItemAtURL_resultingItemURL_error_(
+                NSURL.fileURLWithPath_(str(desk.folder(sid))), None, None)
+            if not ok:
+                return f"Could not move the folder to the Trash: {err}"
+        cloud.forget(sid)
+        return None
+
+    def remove_local(self, sid: str) -> dict:
+        """My strategies -> Remove from this laptop. The cloud copy and the OMS record stay, so
+        the strategy can be downloaded again from the Strategies page."""
+        with self._cloud_lock:
+            error = self._off_this_laptop(sid)
+        return {"ok": False, "error": error} if error else {"ok": True}
+
+    def delete_strategy(self, sid: str) -> dict:
+        """Strategies -> Delete: the strategy itself, everywhere this app can reach. Empties the
+        cloud copy and takes it off this laptop (folder to the Trash). Never traded: hidden from
+        the app. Traded: listed under Strategies -> Removed with a snapshot of its final numbers.
+        The OMS record itself stays (the app can't delete rows there)."""
+        st = self.strategy_status(sid)
+        final = None
+        if st["traded"]:
+            perf = self.strategy_performance(sid)
+            book = self.oms("GET", f"/api/strategies/{sid}/book")
+            final = {**(perf.get("summary") or {}), "fills": st["fills"], "positions": st["positions"]}
+            if book["ok"]:
+                s = book["data"]["strategy"]
+                final.update(budget=s["cash_budget"], realized=s["realized_pnl"], unrealized=s["unrealized_pnl"])
+        with self._cloud_lock:
+            try:
+                cloud.delete(sid)
+            except Exception as exc:
+                return {"ok": False, "error": f"Couldn't delete the cloud copy, so nothing was deleted: {exc}"}
+            error = self._off_this_laptop(sid)
+        if error:
+            return {"ok": False, "error": error}
         if not st["traded"]:
-            if st["local"]:
-                from Foundation import NSURL, NSFileManager
-                ok, _, err = NSFileManager.defaultManager().trashItemAtURL_resultingItemURL_error_(
-                    NSURL.fileURLWithPath_(str(desk.folder(sid))), None, None)
-                if not ok:
-                    return {"ok": False, "error": f"Could not move the folder to the Trash: {err}"}
             if st["in_oms"]:
                 desk.set_flag(sid, "deleted")
             return {"ok": True, "action": "deleted"}
-        perf = self.strategy_performance(sid)
-        book = self.oms("GET", f"/api/strategies/{sid}/book")
-        final = {**(perf.get("summary") or {}), "fills": st["fills"], "positions": st["positions"]}
-        if book["ok"]:
-            s = book["data"]["strategy"]
-            final.update(budget=s["cash_budget"], realized=s["realized_pnl"], unrealized=s["unrealized_pnl"])
         desk.set_flag(sid, "removed", final)
-        desk.set_removed(sid, True)
         return {"ok": True, "action": "removed"}
 
     def restore_strategy(self, sid: str) -> dict:
@@ -382,6 +419,9 @@ class Api:
         else:
             subprocess.Popen(["open", str(desk.folder(sid))])
 
+    def open_folder(self, sid: str) -> None:
+        subprocess.Popen(["open", str(desk.folder(sid))])
+
     def open_strategies_folder(self) -> None:
         subprocess.Popen(["open", str(desk.STRATEGIES)])
 
@@ -424,6 +464,27 @@ class Api:
             self._cloud_wake.set()
             return {"ok": True}
         except ValueError as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def set_details(self, sid: str, name: str, description: str) -> dict:
+        try:
+            desk.set_details(sid, name, description)
+        except (ValueError, OSError) as exc:
+            return {"ok": False, "error": str(exc)}
+        self._cloud_wake.set()  # strategy.json changed: back it up
+        return {"ok": True, "strategy": desk.describe(sid)}
+
+    def files(self, sid: str) -> dict:
+        """The files of a strategy's cloud copy, for the file viewer."""
+        try:
+            return {"ok": True, **cloud.list_files(sid)}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def file(self, sid: str, path: str) -> dict:
+        try:
+            return {"ok": True, **cloud.read_file(sid, path)}
+        except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
     def diff(self, sid: str, a: str, b: str = "working") -> dict:
@@ -487,10 +548,11 @@ class Api:
     # cloud copies (cloud.py)
 
     def _cloud_loop(self) -> None:
-        """Upload changes every 30 seconds while the OMS is up, sooner after a change in the app."""
+        """Upload changes every 30 seconds while the OMS is up, sooner after a change in the app.
+        Until the OMS answers, check every 3 seconds so the cloud shows up right after it starts."""
         while True:
             self.cloud_sync()
-            self._cloud_wake.wait(30)
+            self._cloud_wake.wait(30 if self._cloud.get("online") else 3)
             self._cloud_wake.clear()
 
     def cloud_sync(self) -> dict:
@@ -502,20 +564,38 @@ class Api:
                 self._cloud = cloud.sync_all()
             except Exception as exc:
                 self._cloud = {"online": False, "error": str(exc), "strategies": {}, "available": []}
+        try:
+            cloud.report_installs()
+        except Exception:
+            pass  # e.g. the installs table isn't set up yet; Settings shows why
         return self._cloud
+
+    def refresh_all(self) -> dict:
+        """Ctrl/⌘R in the app: forget cached prices, books, history and stats, and re-check the cloud."""
+        self._snaps.clear()
+        self._books.clear()
+        self._hist.clear()
+        return self.cloud_sync()
 
     def cloud_status(self) -> dict:
         return self._cloud
 
     def cloud_download(self, sid: str) -> dict:
-        """Set up a strategy from its cloud copy, or replace this laptop's copy with it."""
+        """Import a strategy from its cloud copy, or replace this laptop's copy with it."""
         with self._cloud_lock:
             try:
                 cloud.download(sid)
             except Exception as exc:
                 return {"ok": False, "error": str(exc)}
         self.cloud_sync()
-        return {"ok": True}
+        return {"ok": True, "schedule": desk.get_schedule(sid), "loaded": scheduler.loaded(sid)}
+
+    def strategy_installs(self, sid: str) -> dict:
+        """The laptops that have this strategy set up, for its Settings tab."""
+        try:
+            return {"ok": True, "installs": cloud.installs(sid), "host": platform.node()}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
 
     def cloud_keep_mine(self, sid: str) -> dict:
         with self._cloud_lock:
@@ -629,6 +709,8 @@ def _brand_process() -> None:
 
 def main() -> None:
     api = Api()
+    desk.APP_PID.write_text(str(os.getpid()))
+    threading.Thread(target=api.start_oms, daemon=True).start()  # the OMS runs while the app is open
     threading.Thread(target=api._cloud_loop, daemon=True).start()
     _brand_process()
     api.window = webview.create_window(
@@ -640,7 +722,10 @@ def main() -> None:
         min_size=(960, 620),
         background_color="#050505",
     )
-    webview.start(_brand_process)
+    try:
+        webview.start(_brand_process)
+    finally:
+        api.shutdown()
 
 
 if __name__ == "__main__":

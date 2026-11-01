@@ -55,6 +55,6 @@ python3 -m venv .venv
 
 ## Not in git
 
-Strategy folders are personal, so git ignores everything in `strategies/` except `oms_client.py`, `templates/`, this README, and `requirements.txt`. SimpliEarn Desk backs up each strategy's scheduled version to the shared OMS database instead (see **Cloud backup** in the app's Strategy guide), and any laptop can download it from **In the cloud** on My strategies.
+Strategy folders are personal, so git ignores everything in `strategies/` except `oms_client.py`, `templates/`, this README, and `requirements.txt`. SimpliEarn Desk backs up each strategy's scheduled version to the shared OMS database instead (see **Cloud backup** in the app's Strategy guide), and any laptop can download it from the app's **Strategies** page.
 
 xgboost-based strategies need OpenMP on macOS: `brew install libomp` (`install.command` handles this).

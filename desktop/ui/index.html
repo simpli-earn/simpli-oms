@@ -44,9 +44,13 @@
   nav a:hover:not(.active) { color: var(--fg); background: var(--surface-2); }
   nav .sep { height: 1px; background: var(--border); margin: 8px 6px; }
   nav small { font-size: 11px; opacity: .7; }
-  .rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
-  .rail-foot .svc { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .rail-foot .svcs { display: flex; flex-direction: column; gap: 8px; padding: 0 2px; }
+  .rail-foot .svc { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; line-height: 1.2; }
   .rail-foot .btn { width: 100%; justify-content: center; }
+  .rail-foot .dash-link { justify-content: center; width: 100%; margin-top: -2px; }
+  .rail-foot .dash-link:hover:not(:disabled) { color: var(--fg); }
+  .rail-foot .dash-link:disabled { opacity: .4; cursor: default; }
   main { overflow-y: auto; padding: 30px 34px 60px; }
   .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 22px; }
   .page-head p { margin: 8px 0 0; color: var(--muted); max-width: 640px; line-height: 1.45; }
@@ -58,7 +62,7 @@
   @keyframes pulse { 50% { opacity: .35; } }
 
   .card, .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-  .panel { margin-bottom: 16px; overflow: hidden; }
+  .panel { margin-bottom: 16px; overflow-x: auto; }
   .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
   .panel-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   .panel-body { padding: 16px 18px; }
@@ -80,7 +84,10 @@
 
   .strat { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
   .strat-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-  .strat-title { font-size: 17px; font-weight: 500; line-height: 1.3; }
+  .strat-title { font-size: 28px; font-weight: 600; line-height: 1.1; letter-spacing: -.02em; }
+  .path-link { all: unset; cursor: pointer; font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--brand); word-break: break-all; }
+  .path-link:hover { text-decoration: underline; }
+  .menu button.path-link { display: inline; width: auto; padding: 0; border-radius: 0; background: none; text-align: left; font-size: 12.5px; line-height: 1.5; }
   .strat-money { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
   .strat-money label { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
   .strat-money strong { display: block; font-size: 30px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
@@ -101,7 +108,24 @@
   .pop th, .pop td { padding: 5px 6px; text-align: left; font-weight: 400; border: 0; white-space: nowrap; }
   .pop th { font-size: 11px; }
   .pop p { margin: 8px 0 0; color: var(--muted); font-size: 11.5px; white-space: normal; }
-  .risk-table td .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; background: currentColor; }
+  .set-sec { margin-bottom: 14px; }
+  .set-sec h2 { margin: 0 0 14px; font-size: 15px; }
+  .set-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .set-row.install + .set-row.install { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .set-danger .set-row + .set-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .set-danger { border-color: rgba(224,107,107,.25); }
+  .stats-head { margin: 22px 0 10px; align-items: center; }
+  .stats-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; }
+  .stat-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-top: 2px solid var(--border-strong); border-radius: 12px; padding: 14px 16px; }
+  .stat-card.g-border-green { border-top-color: var(--grade-green); } .stat-card.g-border-yellow { border-top-color: var(--grade-yellow); }
+  .stat-card.g-border-orange { border-top-color: var(--grade-orange); } .stat-card.g-border-red { border-top-color: var(--grade-red); }
+  .sc-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .sc-label { color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .sc-grade { font-size: 12px; display: inline-flex; align-items: center; }
+  .sc-grade .swatch { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: currentColor; }
+  .sc-value { font-size: 26px; font-weight: 500; letter-spacing: -.02em; margin: 8px 0 6px; }
+  .sc-foot { color: var(--muted); font-size: 12px; line-height: 1.4; }
   .facts { display: grid; grid-template-columns: 80px 1fr; gap: 14px 16px; margin: 0; padding: 18px 0; font-size: 13.5px;
            border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); align-items: center; }
   .facts dt { color: var(--faint); }
@@ -160,6 +184,8 @@
   .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
   .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
   label.f { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12px; }
+  label.f textarea { min-height: 84px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface-2);
+                     color: var(--fg); font: inherit; font-size: 14px; resize: vertical; user-select: text; }
   label.f input, label.f select { height: 36px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--fg); font-size: 14px; user-select: text; }
   .segmented { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 18px; }
   .segmented button { border: 0; background: transparent; padding: 6px 14px; border-radius: 8px; color: var(--muted); cursor: pointer; }
@@ -191,6 +217,63 @@
   .switch input { width: 18px; height: 18px; accent-color: var(--brand); }
   .note { margin-top: 16px; font-size: 12.5px; line-height: 1.5; color: var(--muted); background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .modal-actions .spacer { flex: 1; }
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+    padding: 4px 8px; border-radius: 6px; background: #20262a; border: 1px solid var(--border-strong); color: var(--fg);
+    font-size: 12px; font-weight: 500; white-space: nowrap; pointer-events: none; z-index: 5; }
+  [data-tip].tip-right:hover::after { bottom: auto; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
+  .here-ico { display: inline-flex; vertical-align: middle; margin-left: 8px; color: var(--info); }
+  .here-ico svg { width: 16px; height: 16px; }
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border-strong); border-top-color: var(--brand);
+          border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin: 0 0 18px; }
+  .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 10px 14px;
+                 color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; }
+  .tabs button:hover { color: var(--fg); }
+  .tabs button.on { color: var(--fg); border-bottom-color: var(--brand); }
+  .tabs small { color: var(--faint); margin-left: 5px; font-size: 12px; }
+  .stats.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tab-pane { display: none; }
+  .tab-pane.on { display: block; }
+  .strat-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; font-size: 13.5px; }
+  .head-actions { display: flex; gap: 8px; align-items: center; flex: none; }
+  .head-actions .sep { width: 1px; height: 22px; background: var(--border-strong); margin: 0 2px; }
+  .btn.icon-sq.trash:hover:not(:disabled) { color: var(--bad); border-color: rgba(224,107,107,.45); }
+  .fb-panel { display: flex; flex-direction: column; height: calc(100vh - 250px); min-height: 460px; overflow: hidden; }
+  .fb-top { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+  .fb pre { margin: 0; white-space: pre; user-select: text; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; line-height: 1.55; color: #cfd4d8; }
+  .fb { display: grid; grid-template-columns: 260px 1fr; flex: 1; min-height: 0; }
+  .fb-tree { border-right: 1px solid var(--border); overflow: auto; padding: 10px 8px 24px; font-size: 13px; }
+  .fb-tree button { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; padding: 4px 8px; border: 0; border-radius: 6px;
+                    background: transparent; color: var(--fg); cursor: pointer; white-space: nowrap; font: inherit; }
+  .fb-tree button:hover { background: var(--surface); }
+  .fb-tree button.on { background: var(--surface-2); color: var(--brand); }
+  .fb-tree button.dir { color: var(--muted); }
+  .fb-tree .name { overflow: hidden; text-overflow: ellipsis; }
+  .fb-tree .tag { margin-left: auto; font-size: 10.5px; color: var(--faint); flex: none; }
+  .fb-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .fb-head { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; font-size: 12.5px; flex-wrap: wrap; }
+  .fb-body { overflow: auto; flex: 1; }
+  .fb-code { display: grid; grid-template-columns: auto 1fr; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; line-height: 1.55; }
+  .fb-code .ln { text-align: right; color: var(--faint); padding: 12px 10px 12px 16px; user-select: none; border-right: 1px solid var(--border); white-space: pre; }
+  .fb-code pre { padding: 12px 16px; }
+  .nb-cell { margin: 12px 16px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .nb-cell .nb-tag { font-size: 10.5px; color: var(--faint); padding: 4px 10px; border-bottom: 1px solid var(--border); }
+  .nb-cell pre { padding: 10px 12px; overflow-x: auto; }
+  .nb-md { padding: 4px 16px; white-space: pre-wrap; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .nb-cell pre.nb-out { border-top: 1px dashed var(--border-strong); color: var(--muted); max-height: 320px; background: #070908; }
+  .fb-empty { padding: 40px; color: var(--muted); }
+  .row-remote td:not(:first-child):not(:last-child), .row-remote td:first-child > a { opacity: .5; }
+  .strat-table th:first-child, .strat-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); white-space: nowrap; }
+  .strat-table tr:hover td:first-child { background: var(--surface-2); }
+  .cloud-get { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 24px; margin-left: 8px; vertical-align: middle;
+               border: 1px solid rgba(127,182,255,.35); border-radius: 7px; background: rgba(127,182,255,.10); color: var(--info); cursor: pointer; padding: 0; }
+  .cloud-get:hover { background: rgba(127,182,255,.22); }
+  .cloud-get svg { width: 16px; height: 16px; }
+  .chip.manual { background: #22201a; color: #d8c38f; }
+  .fb-about { color: var(--muted); font-size: 12.5px; padding: 0 16px 10px; border-bottom: 1px solid var(--border); }
 
   .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #1a1d1c; border: 1px solid var(--border-strong);
            border-radius: 10px; padding: 10px 14px; z-index: 30; display: none; max-width: 80vw; }
@@ -198,6 +281,7 @@
   .toast.err { border-color: rgba(224,107,107,.5); color: #f2b3b3; }
 
   .strat-head { flex-direction: row; justify-content: space-between; }
+  .strat-head { margin-bottom: -12px; }  /* sits closer to the numbers than the card's other sections */
   .strat-head .head-main { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
   .menu-wrap { position: relative; display: inline-flex; }
   .menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 15; min-width: 210px; display: none; padding: 6px;
@@ -260,27 +344,30 @@
 
   .drawer.wide { width: min(820px, 94vw); }
   .drawer .scroll { overflow-y: auto; flex: 1; padding: 18px 22px 30px; user-select: text; }
-  .vform { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: end; }
-  .vform .full { grid-column: 1 / -1; }
-  .vsummary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-  .vtile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-  .vtile label { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
-  .vtile b { font-weight: 500; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
   .warnc { color: var(--warn); }
-  .vsave h2 { margin: 0 0 14px; font-size: 15px; }
-  .vhist-title { margin: 28px 0 14px; font-size: 15px; }
-  .vtimeline { position: relative; padding-left: 22px; }
-  .vtimeline::before { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: var(--border-strong); border-radius: 2px; }
-  .vrow { position: relative; padding: 0 0 26px; }
-  .vrow::before { content: ""; position: absolute; left: -22px; top: 5px; width: 12px; height: 12px; border-radius: 50%;
-                  background: #0b0d0c; border: 2px solid var(--border-strong); box-sizing: border-box; }
-  .vrow.current::before { background: var(--brand); border-color: var(--brand); }
-  .vrow-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .vname { font-weight: 500; font-size: 14.5px; }
-  .vdate { margin-left: auto; font-size: 12.5px; }
-  .vnote { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-  .vrow-actions { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-top: 12px; }
-  .vrow-actions .btn + .linkish { margin-left: 6px; }
+  .vstatus { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-bottom: 14px; font-size: 13.5px; color: var(--muted); }
+  .vstatus b { color: var(--fg); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .vsave-row { display: grid; grid-template-columns: 90px 1fr 1fr auto; gap: 10px; align-items: end; }
+  .vlist { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .vitem { display: grid; grid-template-columns: 54px 1fr auto auto; align-items: center; gap: 14px; padding: 12px 14px 12px 16px; }
+  .vitem + .vitem, .vitem-wrap + .vitem-wrap { border-top: 1px solid var(--border); }
+  .vitem .vtitle { min-width: 0; }
+  .vitem .vtitle b { font-weight: 500; }
+  .vitem .vtitle .vnote { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vitem .vtags { display: flex; gap: 10px; align-items: center; font-size: 12px; white-space: nowrap; }
+  .vtag { display: inline-flex; align-items: center; gap: 4px; }
+  .vtag svg { width: 14px; height: 14px; }
+  .vtag.sched { color: var(--brand); }
+  .vitem .vacts { display: flex; gap: 6px; align-items: center; }
+  .vitem .btn.icon-sq { width: 30px; height: 30px; }
+  .vitem .btn.icon-sq svg { width: 15px; height: 15px; }
+  .vitem .btn.play { width: 30px; height: 30px; }
+  .vitem .btn.play svg { width: 11px; height: 11px; }
+  details.vmore > summary { list-style: none; }
+  details.vmore > summary::-webkit-details-marker { display: none; }
+  details.vmore[open] > .menu { display: block; }
+  .menu button.danger { color: var(--bad); }
+  .vitem-wrap .diff { margin: 0 14px 14px; }
   .linkish.danger { color: var(--bad); opacity: .8; }
   .diff { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; background: #080a09; padding: 10px 0; overflow-x: auto;
           font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; line-height: 1.55; white-space: pre; }
@@ -331,14 +418,16 @@
       <a data-nav="guide" href="#/guide">Strategy guide</a>
       <div class="sep"></div>
       <a data-nav="account" href="#/account">Account</a>
-      <a data-nav="strategies" href="#/strategies">Strategies</a>
+      <a data-nav="strategies" href="#/strategies">Strategies <small id="nav-cloud" title="In the cloud, not on this laptop"></small></a>
       <a data-nav="order" href="#/order">New order</a>
     </nav>
     <div class="rail-foot">
-      <div class="svc"><span class="dot" id="dot-backend"></span>OMS backend</div>
-      <div class="svc"><span class="dot" id="dot-frontend"></span>Web dashboard</div>
+      <div class="svcs">
+        <div class="svc"><span class="dot" id="dot-backend"></span>OMS backend</div>
+        <div class="svc"><span class="dot" id="dot-frontend"></span>Web dashboard</div>
+      </div>
       <button class="btn primary" id="oms-toggle">Start OMS</button>
-      <button class="btn ghost" id="open-dash" disabled>Open web dashboard</button>
+      <button class="linkish dash-link" id="open-dash" disabled>Open web dashboard ↗</button>
     </div>
   </aside>
   <main id="view"></main>
@@ -361,9 +450,32 @@
   <pre id="log-text"></pre>
 </aside>
 
+<div class="modal" id="details" role="dialog" aria-label="Edit details">
+  <h2 id="det-title" style="margin-bottom:16px">Edit details</h2>
+  <div class="field"><label class="f">Name<input id="det-name" /></label></div>
+  <div class="field"><label class="f">Description<textarea id="det-desc" placeholder="What it trades and how"></textarea></label></div>
+  <p class="help" id="det-id"></p>
+  <div class="modal-actions">
+    <button class="btn ghost" data-close>Cancel</button>
+    <button class="btn primary" id="det-save">Save</button>
+  </div>
+</div>
+
+<div class="modal" id="vsave" role="dialog" aria-label="Save version">
+  <h2 id="vsave-title" style="margin-bottom:16px">Save version</h2>
+  <div class="vsave-row" style="grid-template-columns:90px 1fr">
+    <label class="f">Label<input id="vs-label" /></label>
+    <label class="f">What changed<input id="vs-name" placeholder="e.g. Added volatility filter" /></label>
+  </div>
+  <div class="field" style="margin-top:10px"><label class="f">Note<input id="vs-note" placeholder="Optional" /></label></div>
+  <div class="modal-actions">
+    <button class="btn ghost" data-close>Cancel</button>
+    <button class="btn primary" id="vs-save">Save</button>
+  </div>
+</div>
+
 <div class="modal" id="sched" role="dialog" aria-label="Schedule">
   <h2 id="sched-title">Schedule</h2>
-  <div class="field"><label class="switch"><input type="checkbox" id="sched-enabled" /> Run automatically</label></div>
   <div class="field">
     <label class="lbl" for="sched-time">Time on this laptop</label>
     <input type="time" id="sched-time" value="15:40" />
@@ -371,8 +483,10 @@
   </div>
   <div class="field"><label class="lbl">Days</label><div class="days" id="sched-days"></div></div>
   <div class="field"><label class="f">Scheduled runs use<select id="sched-version"></select></label></div>
-  <div class="note">Runs through macOS even when this app is closed. If the laptop is asleep at that time, it runs once on wake; if it is shut down, that day is skipped. The strategy itself decides what to do when the market is closed.</div>
+  <div class="note">Runs even when the app is closed. If the laptop is asleep, it runs when it wakes; if it's off, that day is skipped.</div>
   <div class="modal-actions">
+    <button class="btn danger" id="sched-off">Turn off</button>
+    <span class="spacer"></span>
     <button class="btn ghost" data-close>Cancel</button>
     <button class="btn primary" id="sched-save">Save</button>
   </div>
@@ -384,7 +498,7 @@
     <label class="f">OMS strategy
       <select id="ns-id"></select>
     </label>
-    <p class="help">Every order is tagged with this id, and it can only spend this strategy's cash.</p>
+    <p class="help">Orders are tagged with this id and use its cash.</p>
     <div id="ns-register" class="fields" style="margin-top:10px;display:none">
       <label class="f">New strategy id (unique across the team)<input id="ns-new-id" placeholder="ishan-momentum" /></label>
       <label class="f">Cash budget<input id="ns-budget" value="1000" inputmode="decimal" /></label>
@@ -393,9 +507,9 @@
   <div class="field">
     <label class="lbl">Code</label>
     <div class="choice-grid">
-      <button class="choice on" data-origin="template"><b>Start from template</b><span>A ready-to-fill file stored in the app folder.</span></button>
-      <button class="choice" data-origin="link"><b>Link a file</b><span>Runs your file where it is. Every run uses its latest saved version.</span></button>
-      <button class="choice" data-origin="upload"><b>Upload a copy</b><span>Copies your file into the app folder. Edit it there from then on.</span></button>
+      <button class="choice on" data-origin="template"><b>Start from template</b><span>A starter file to fill in.</span></button>
+      <button class="choice" data-origin="link"><b>Link a file</b><span>Runs your file where it is.</span></button>
+      <button class="choice" data-origin="upload"><b>Upload a copy</b><span>Copies your file into the app.</span></button>
     </div>
     <div class="picked" id="ns-template-kind">
       <div class="segmented" style="margin:0"><button type="button" class="on" data-kind="py">Python script (.py)</button><button type="button" data-kind="ipynb">Notebook (.ipynb)</button></div>
@@ -409,10 +523,10 @@
     <b>Your code needs 3 lines</b>
     <ol>
       <li><code>oms = OMS()</code> connects. The app fills in the id.</li>
-      <li><code>target = {"SPY": 0.5, "QQQ": 0.5}</code> is your signal: the share of this strategy's cash per stock. Leftover stays cash; anything held but not listed gets sold.</li>
+      <li><code>target = {"SPY": 0.5, "QQQ": 0.5}</code> is your signal: the share of cash per stock. Anything not listed gets sold.</li>
       <li><code>oms.rebalance(target, prices)</code> sells, then buys to match.</li>
     </ol>
-    <span class="muted">Try <b>Test run</b> first: it prints the orders without sending them. <a href="#/guide" data-close>Full guide</a></span>
+    <span class="muted">Try <b>Test run</b> first: it only prints the orders. <a href="#/guide" data-close>Guide</a></span>
   </div>
   <div class="field"><label class="f">Display name (optional; otherwise taken from the code)<input id="ns-title" placeholder="Momentum top 10" /></label></div>
   <div class="modal-actions">
@@ -421,13 +535,7 @@
   </div>
 </div>
 
-<aside class="drawer wide" id="vdrawer" aria-label="Versions">
-  <div class="drawer-head">
-    <div><h2 id="v-title">Versions</h2><div class="muted" id="v-sub" style="margin-top:6px"></div></div>
-    <div class="actions"><button class="btn ghost" data-close>Close</button></div>
-  </div>
-  <div class="scroll" id="v-body"></div>
-</aside>
+
 
 <div class="toast" id="toast"></div>
 
@@ -436,11 +544,11 @@ const $ = (id) => document.getElementById(id);
 const api = () => window.pywebview.api;
 const DAYS = [[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"],[7,"Sun"]];
 const TERMINAL = ["filled", "canceled", "expired", "rejected", "replaced"];
-let state = { oms: {}, strategies: [], runs: [], books: {}, stats: {}, cloud: { strategies: {}, available: [] } };
+let state = { oms: {}, strategies: [], runs: [], books: {}, stats: {}, cloud: { strategies: {}, all: [], available: [] } };
 let openRunId = null, schedNotebook = null, schedDays = new Set();
 let openMenu = null; // "info:<id>" or "open:<id>": card menus survive the 2-second re-render
 const ORIGIN = { template_py: "from template", template_ipynb: "from template", upload: "uploaded copy", link: "linked file" };
-const TEST_RUN_TIP = "Test run: runs the strategy end to end but only prints the orders it would place. Nothing is sent to the OMS or Alpaca.";
+const TEST_RUN_TIP = "Test run: prints the orders without sending them";
 let current = { name: null, arg: null, timer: null };
 
 // formatting (same rules as the web dashboard)
@@ -454,11 +562,11 @@ const signed = (v) => v == null ? "—" : (v >= 0 ? "+" : "-") + "$" + Math.abs(
 const pct = (v) => v == null || isNaN(v) ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2) + "%";
 const GRADE_WORD = { green: "Good", yellow: "Okay", orange: "Weak", red: "Poor" };
 const STATS = {  // `ranges` = green, yellow, orange, red, shown in the ? overview
-  volatility: { label: "Volatility", fmt: (v) => v.toFixed(1) + "%", base: (x) => x.benchmark_volatility.toFixed(1) + "%",
+  volatility: { label: "Volatility", what: "How much it swings, per year", fmt: (v) => v.toFixed(1) + "%", base: (x) => x.benchmark_volatility.toFixed(1) + "%",
     ranges: ["≤ SPY", "≤ 1.25× SPY", "≤ 1.6× SPY", "higher"] },
-  beta: { label: "Beta", fmt: (v) => v.toFixed(2), base: () => "1.00", ranges: ["≤ 0.8", "0.8 – 1.1", "1.1 – 1.5", "> 1.5"] },
-  alpha: { label: "Alpha", fmt: (v) => pct(v), base: () => "0.00%", ranges: ["≥ +3%", "0 – 3%", "0 – −3%", "< −3%"] },
-  alpha_t: { label: "T-stat", fmt: (v) => v == null ? "—" : v.toFixed(2), base: () => "—", ranges: ["≥ 2", "1 – 2", "0 – 1", "< 0"] },
+  beta: { label: "Beta", what: "Moves vs the market (1 = same)", fmt: (v) => v.toFixed(2), base: () => "1.00", ranges: ["≤ 0.8", "0.8 – 1.1", "1.1 – 1.5", "> 1.5"] },
+  alpha: { label: "Alpha", what: "Return beyond the market, per year", fmt: (v) => pct(v), base: () => "0.00%", ranges: ["≥ +3%", "0 – 3%", "0 – −3%", "< −3%"] },
+  alpha_t: { label: "T-stat", what: "Is the alpha real? 2+ = likely", fmt: (v) => v == null ? "—" : v.toFixed(2), base: () => "—", ranges: ["≥ 2", "1 – 2", "0 – 1", "< 0"] },
 };
 function statsHelp() {
   const head = ["green", "yellow", "orange", "red"].map((g) => `<th class="g-${g}">${GRADE_WORD[g]}</th>`).join("");
@@ -468,14 +576,16 @@ function statsHelp() {
     </table><p>Alpha only shows Good or Poor once its t-stat is 2 or more (2+ means it's probably not luck).</p></div></span>`;
 }
 const EARLY = `<span class="chip off" title="Only a few weeks of data, so these numbers will move a lot">Early estimate</span>`;
-function statsPanel(x) {  // table for the strategy page
-  const headP = `<div class="panel-head"><div><h2 style="display:flex;align-items:center;gap:8px">Statistics ${statsHelp()}</h2><p>Compared with SPY, an S&P 500 index fund.</p></div>${x?.early ? EARLY : ""}</div>`;
-  if (!x) return `<div class="panel" style="overflow:visible">${headP}<div class="empty">Loading…</div></div>`;
-  if (!x.ready) return `<div class="panel" style="overflow:visible">${headP}<div class="empty">${esc(x.reason)}</div></div>`;
-  return `<div class="panel" style="overflow:visible">${headP}<table class="risk-table"><thead><tr><th></th><th class="num">Strategy</th><th class="num">SPY</th><th></th></tr></thead><tbody>
-    ${Object.entries(STATS).map(([k, m]) => `<tr><td>${m.label}</td><td class="num g-${x.grades[k]}"><strong>${m.fmt(x[k])}</strong></td>
-      <td class="num muted">${m.base(x)}</td><td class="g-${x.grades[k]}" style="white-space:nowrap"><span class="swatch"></span>${GRADE_WORD[x.grades[k]]}</td></tr>`).join("")}
-    </tbody></table></div>`;
+function statsPanel(x) {  // the strategy page's Statistics: one card per number, graded against SPY
+  const head = `<div class="section-head stats-head"><h2>Statistics vs SPY ${statsHelp()}</h2>${x?.early ? EARLY : ""}</div>`;
+  if (!x) return head + `<div class="card empty">Loading…</div>`;
+  if (!x.ready) return head + `<div class="card empty">${esc(x.reason)}</div>`;
+  return head + `<div class="stat-cards">${Object.entries(STATS).map(([k, m]) => { const g = x.grades[k]; return `
+    <div class="stat-card g-border-${g}">
+      <div class="sc-top"><span class="sc-label">${m.label}</span><span class="sc-grade g-${g}"><span class="swatch"></span>${GRADE_WORD[g]}</span></div>
+      <div class="sc-value g-${g}">${m.fmt(x[k])}</div>
+      <div class="sc-foot">${k === "alpha_t" ? "" : `<span>SPY ${m.base(x)}</span> · `}${m.what}</div>
+    </div>`; }).join("")}</div>`;
 }
 const pctCell = (v, extra = "") => `<td class="num ${tone(v)}">${pct(v)}${extra}</td>`;
 const label = (s) => String(s || "").replaceAll("_", " ");
@@ -517,6 +627,7 @@ function scheduleText(s) {
   const days = wd === "1,2,3,4,5" ? "Weekdays" : wd === "1,2,3,4,5,6,7" ? "Every day" : s.weekdays.map((d) => DAYS[d - 1][1]).join(" ");
   return `${days} at ${fmtTime(s.hour, s.minute)}`;
 }
+const inCloudNow = (id) => (state.cloud.all || []).some((c) => c.strategy_id === id);
 const localIds = () => new Set(state.strategies.map((s) => s.strategy_id).filter(Boolean));
 const localFor = (id) => state.strategies.find((s) => s.strategy_id === id);
 
@@ -529,7 +640,7 @@ function head(title, lede, right = "") {
   return `<div class="page-head"><div><h1>${esc(title)}</h1>${lede ? `<p>${lede}</p>` : ""}</div>${right}</div>`;
 }
 function omsDown() {
-  return `<div class="panel"><div class="empty">The OMS isn't running, so there's nothing to show yet.<div style="margin-top:14px"><button class="btn primary" data-start-oms>Start OMS</button></div></div></div>`;
+  return `<div class="panel"><div class="empty">The OMS isn't running.<div style="margin-top:14px"><button class="btn primary" data-start-oms>Start OMS</button></div></div></div>`;
 }
 
 // ---------- OMS controls (sidebar) ----------
@@ -562,7 +673,7 @@ const views = {};
 views.desk = {
   interval: 2000,
   mount() {
-    return head("My strategies", "Strategies on this laptop, each in its own folder in <span class=\"mono\">simpli-oms/strategies</span>. New to this? Read the <a href=\"#/guide\">Strategy guide</a>.",
+    return head("My strategies", "Strategies on this laptop. New here? See the <a href=\"#/guide\">guide</a>.",
       `<div class="actions"><button class="btn ghost" data-folder>Open folder</button><button class="btn primary" data-new>Add strategy</button></div>`) +
       `<div class="grid" id="cards"><div class="card empty">Loading…</div></div>
        <div id="cloud-list"></div>
@@ -572,18 +683,13 @@ views.desk = {
   async update() {
     const el = $("cards");
     if (!el) return;
-    if (!state.strategies.length) {
-      el.innerHTML = `<div class="card empty">No strategies yet. Click <b>Add strategy</b> to start from a template, link a file, or upload one.</div>`;
-    } else el.innerHTML = state.strategies.map(card).join("");
     const avail = state.cloud.available || [];
-    $("cloud-list").innerHTML = avail.length ? `
-      <div class="section-head"><h2>In the cloud</h2><span class="faint">Backed up from any laptop, not set up on this one</span></div>
-      <div class="panel"><table><thead><tr><th>Strategy</th><th>Files</th><th>Last upload</th><th></th></tr></thead><tbody>${avail.map((c) => `
-        <tr><td><span class="chip">${esc(c.strategy_id)}</span></td>
-          <td class="num muted">${c.files} · ${(c.size / 1024).toFixed(0)} KB</td>
-          <td class="muted" data-sort="${c.updated_at}">${ago(c.updated_at)}${c.updated_by ? " · " + esc(c.updated_by.replace(/\.local$/, "")) : ""}</td>
-          <td style="text-align:right"><button class="btn sm primary" data-cloud-get="${esc(c.strategy_id)}">Download</button></td></tr>`).join("")}
-      </tbody></table></div>` : "";
+    const fromCloud = `<a href="#/strategies">${avail.length} in the cloud</a>`;
+    if (!state.strategies.length) {
+      el.innerHTML = `<div class="card empty" style="grid-column:1/-1">No strategies on this laptop yet.
+${avail.length ? `<div class="actions" style="justify-content:center;margin-top:14px"><a class="btn" href="#/strategies">${CLOUD_DOWN.replace("<svg", '<svg width="15" height="15"')} Download from cloud (${avail.length})</a></div>` : ""}</div>`;
+    } else el.innerHTML = state.strategies.map(card).join("");
+    $("cloud-list").innerHTML = state.strategies.length && avail.length ? `<p class="muted" style="margin:12px 2px 0;font-size:13px">${fromCloud} to download</p>` : "";
     $("runs").innerHTML = state.runs.length ? state.runs.map((r) => `
       <tr class="link" data-log="${r.id}">
         <td class="num" data-sort="${r.started_at}">${ago(r.started_at)}</td>
@@ -593,7 +699,7 @@ views.desk = {
         <td>${badge(r.status)}</td>
         <td class="summary-cell muted" title="${esc(r.summary || "")}">${esc(r.summary || "")}</td>
         <td class="num muted">${took(r)}</td>
-      </tr>`).join("") : '<tr><td colspan="7" class="empty">No runs yet. Hit Run now on a strategy.</td></tr>';
+      </tr>`).join("") : '<tr><td colspan="7" class="empty">No runs yet.</td></tr>';
   },
 };
 function versionLine(s) {
@@ -613,15 +719,17 @@ function cloudRow(s) {
     ? `<span class="down">Backup off</span> <span class="muted" style="flex-basis:100%;font-size:12.5px">${esc(state.cloud.error)}</span>`
     : '<span class="faint">Checking…</span>';
   if (!c) return '<span class="faint">Checking…</span>';
-  const skipped = c.skipped?.length ? ` <span class="warnc" title="${esc(c.skipped.join(", "))}">· ${c.skipped.length} file(s) over 10 MB not backed up</span>` : "";
+  const skipped = c.skipped?.length ? ` <span class="warnc" title="${esc(c.skipped.join(", "))}">· ${c.skipped.length} file(s) over 10 MB skipped</span>` : "";
   if (c.state === "synced") return `<span class="up">✓ Backed up</span>${s.scheduled_version ? ` <span class="chip">${esc(s.scheduled_version)}</span>` : ""}${skipped}`;
   if (c.state === "update") return `<span class="warnc">Newer copy in the cloud${by(c)}</span><button class="btn sm" data-cloud-get="${sid}">Update</button>`;
   if (c.state === "conflict") return `<span class="warnc">Changed here and in the cloud${by(c)}</span>
     <button class="btn sm" data-cloud-mine="${sid}" title="Upload this laptop's copy over the cloud's">Keep mine</button>
     <button class="btn sm" data-cloud-get="${sid}" title="Replace this laptop's copy with the cloud's">Use cloud's</button>`;
-  if (c.state === "no_version") return `<span class="faint">Not backed up: only the version used for scheduled runs goes to the cloud</span>
+  if (c.state === "cloud_deleted") return `<span class="warnc">Deleted from the cloud${by(c)}</span>
+    <button class="btn sm" data-cloud-mine="${sid}" data-again="1">Back up again</button>`;
+  if (c.state === "no_version") return `<span class="faint">Not backed up: no scheduled version</span>
     <button class="btn sm" data-versions="${sid}">Pick one</button>`;
-  if (c.state === "unregistered") return '<span class="faint">Not backed up: register it in the OMS first</span>';
+  if (c.state === "unregistered") return '<span class="faint">Not backed up: not registered</span>';
   return `<span class="down">Backup failed</span>${c.error ? ` <span class="muted" style="flex-basis:100%;font-size:12.5px">${esc(c.error)}</span>` : ""}`;
 }
 function card(s) {
@@ -630,10 +738,6 @@ function card(s) {
   const st = scheduleText(s.schedule), nxt = nextRun(s.schedule);
   const errors = s.checks.filter((c) => c.level === "error");
   const sid = esc(s.strategy_id);
-  // the title often repeats the id ("zscore-spy: pooled …"); the chip already shows it
-  let title = s.title || s.strategy_id;
-  if (title.toLowerCase().startsWith(s.strategy_id.toLowerCase() + ":")) title = title.slice(s.strategy_id.length + 1).trim();
-  title = title.charAt(0).toUpperCase() + title.slice(1);
   const money_ = b.registered
     ? `<div class="strat-money">
          <div><label>Equity</label><strong class="num">${money(b.equity)}</strong></div>
@@ -653,8 +757,8 @@ function card(s) {
   return `<div class="card strat">
     <div class="strat-head">
       <div class="head-main" title="${esc(s.description || "")}">
-        <div class="strat-title">${esc(title)}</div>
-        ${b.registered ? `<a class="chip" href="#/strategy/${enc(s.strategy_id)}">${sid}</a>` : `<span class="chip">${sid}</span>`}
+        <div class="strat-title">${b.registered ? `<a href="#/strategy/${enc(s.strategy_id)}" style="color:inherit">${esc(s.name || s.strategy_id)}</a>` : esc(s.name || s.strategy_id)}</div>
+        ${s.name ? `<div class="mono faint" style="font-size:12px;margin-top:3px">${sid}</div>` : ""}
       </div>
       <div class="menu-wrap">
         <button class="btn ghost icon-btn" data-menu="info:${sid}" title="Code and run details" aria-label="Code and run details">
@@ -663,12 +767,12 @@ function card(s) {
         <div class="menu${menu("info")}"><div class="info"><dl>
           <dt>About</dt><dd>${esc(s.description || "—")}</dd>
           <dt>Type</dt><dd>${s.kind === "ipynb" ? "Jupyter notebook" : "Python script"}</dd>
-          <dt>Code</dt><dd>${s.source === "linked" ? "Linked file: every run reads its latest saved version" : `Stored in the app folder (${esc(ORIGIN[s.origin] || "local")})`}</dd>
-          <dt>File</dt><dd class="mono">${esc(home(s.path))}</dd>
-          <dt>Folder</dt><dd class="mono">${esc(home(s.folder))}</dd>
+          <dt>Code</dt><dd>${s.source === "linked" ? "Linked file" : `In the app folder (${esc(ORIGIN[s.origin] || "local")})`}</dd>
+          <dt>File</dt><dd><button class="path-link" data-code="${sid}" title="${s.kind === "ipynb" ? "Open in JupyterLab" : "Open in your editor"}">${esc(home(s.path))}</button></dd>
+          <dt>Folder</dt><dd><button class="path-link" data-open-folder="${sid}" title="Open in Finder">${esc(home(s.folder))}</button></dd>
           <dt>Code hash</dt><dd class="mono">${esc(s.code_hash || "—")}</dd>
         </dl>
-        <button class="btn sm danger" style="margin-top:12px" data-delete="${sid}">Delete strategy…</button></div></div>
+        <div class="actions" style="margin-top:12px"><button class="btn sm" data-edit="${sid}">Edit details</button><button class="btn sm danger" data-remove-local="${sid}">Remove from this laptop…</button></div></div></div>
       </div>
     </div>
     ${s.checks.length ? `<div class="checks">${s.checks.map((c) => `<div class="${c.level}">${c.level === "error" ? "✕" : "!"} ${esc(c.msg)}</div>`).join("")}</div>` : ""}
@@ -685,11 +789,11 @@ function card(s) {
     <div class="strat-actions">
       ${active
         ? `<button class="btn" data-log="${r.id}">View live log</button><button class="btn danger" data-stop="${r.id}">Stop</button>`
-        : `<button class="btn primary play" data-run="${sid}" ${errors.length ? "disabled" : ""} title="Run now: sends real orders to the paper account" aria-label="Run now">
+        : `<button class="btn primary play" data-run="${sid}" ${errors.length ? "disabled" : ""} data-tip="Run" aria-label="Run now">
              <svg viewBox="0 0 14 14"><path d="M3 1.6v10.8a.6.6 0 0 0 .9.5l8.6-5.4a.6.6 0 0 0 0-1L3.9 1.1a.6.6 0 0 0-.9.5z" fill="currentColor"/></svg></button>
            <button class="btn" data-dry="${sid}" ${errors.length ? "disabled" : ""} title="${TEST_RUN_TIP}">Test run</button>`}
       <span class="spacer"></span>
-      <button class="btn compact" data-versions="${sid}">Versions</button>
+      ${saveBtn(s)}<button class="btn compact" data-versions="${sid}">Versions</button>
       <button class="btn icon-sq${st ? " on" : ""}" data-sched="${sid}" title="${st ? "Schedule: " + esc(st) : "Schedule automatic runs"}" aria-label="Schedule">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"/><path d="M10 6v4.2l2.8 1.8"/></svg>
       </button>
@@ -698,6 +802,7 @@ function card(s) {
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 3.5h5v5M16.5 3.5 9.5 10.5"/><path d="M14.5 11.5v4a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h4"/></svg>
         </button>
         <div class="menu${menu("open")}" role="menu">
+          <button data-files="${sid}" ${inCloudNow(s.strategy_id) ? "" : 'disabled title="Not backed up yet"'}>Cloud files</button>
           <button data-code="${sid}" ${s.exists ? "" : "disabled"}>${s.kind === "ipynb" ? "Code in JupyterLab" : "Code in your editor"}</button>
           <button data-reveal="${sid}">${s.source === "linked" ? "Linked file in Finder" : "Strategy folder in Finder"}</button>
           <button data-log="${r ? r.id : ""}" ${r ? "" : "disabled"}>Last run's log</button>
@@ -868,24 +973,18 @@ function refreshChartIfStale(id) {  // charts refresh every minute, not on every
 async function deleteFlow(sid) {
   const st = await api().strategy_status(sid);
   if (!st.ok) return toast(st.error || "Could not check the strategy", true);
-  let msg;
-  if (!st.traded) {
-    msg = `Delete ${sid}?\n\nIt never traded, so it's deleted completely from this app:\n` +
-      `• it disappears from Strategies and My strategies\n` +
-      (st.local ? `• its folder strategies/${sid}/ moves to the Trash${st.linked ? " (your linked file is not touched)" : ""}\n` : "") +
-      `\nNote: the shared OMS database doesn't let this app delete rows, so the record still exists there (the web dashboard and teammates still see it) until a database owner removes it.`;
-  } else {
-    msg = `Remove ${sid}?\n\nIt has ${st.fills} fill${st.fills === 1 ? "" : "s"}, so its record is kept:\n` +
-      `• it's removed from My strategies and its schedule is turned off\n` +
-      (st.local ? `• its code stays in strategies/${sid}/\n` : "") +
-      `• it moves to a "Removed" section on the Strategies page, with its final numbers\n` +
-      (st.positions ? `\nIt still holds ${st.positions} position${st.positions === 1 ? "" : "s"} worth about ${money(st.position_value)}. Removing does not sell them.` : "") +
-      (st.open_orders ? `\nIt has ${st.open_orders} open order${st.open_orders === 1 ? "" : "s"}. Removing does not cancel them.` : "");
-  }
+  const inCloud = (state.cloud.all || []).some((c) => c.strategy_id === sid);
+  let msg = `Delete ${sid} everywhere?\n\n` +
+    (inCloud ? `• Deletes the cloud copy\n` : "") +
+    (st.local ? `• Moves its folder on this laptop to the Trash${st.linked ? " (not your linked file)" : ""}\n` : "") +
+    (st.traded ? `• Keeps its trade record under Strategies → Removed\n` : `• Hides it from Strategies\n`) +
+    (st.positions ? `\nIts ${st.positions} position${st.positions === 1 ? "" : "s"} (about ${money(st.position_value)}) won't be sold.` : "") +
+    (st.open_orders ? `\nIts ${st.open_orders} open order${st.open_orders === 1 ? "" : "s"} won't be canceled.` : "") +
+    `\n\nTo only take it off this laptop, use "Remove from this laptop" on My strategies.`;
   if (!confirm(msg)) return;
   const res = await api().delete_strategy(sid);
   if (!res.ok) return toast(res.error, true);
-  toast(res.action === "deleted" ? `${sid} deleted` : `${sid} removed. See Strategies → Removed`);
+  toast(`${sid} deleted`);
   closeOverlays(); openMenu = null;
   await refresh(); refreshBooks();
   if (current.name === "strategy") location.hash = "#/strategies"; else route();
@@ -895,8 +994,8 @@ async function deleteFlow(sid) {
 views.guide = {
   interval: 0,
   mount() {
-    return head("Strategy guide", "What your code needs to do to run on this platform, and how the app runs it.") + `<div class="guide">
-<div class="callout"><b>The whole contract:</b> a strategy is one <code>.py</code> or <code>.ipynb</code> file that creates <code>OMS()</code>, decides target weights, and calls <code>oms.rebalance(weights, prices)</code>. The app supplies the strategy id and test-run switch; you supply the signal.</div>
+    return head("Strategy guide", "How to write a strategy and how the app runs it.") + `<div class="guide">
+<div class="callout">A strategy is one <code>.py</code> or <code>.ipynb</code> file: create <code>OMS()</code>, pick target weights, call <code>oms.rebalance(weights, prices)</code>.</div>
 
 <h2>Smallest working strategy</h2>
 <pre>"""Equal-weight SPY and QQQ
@@ -912,12 +1011,11 @@ oms.rebalance(target, latest_prices(set(target) | set(oms.holdings())))</pre>
 
 <h2>How a run works</h2>
 <ol>
-  <li>You press <b>Run now</b> / <b>Test run</b>, or the schedule fires (even with the app closed).</li>
-  <li>The app picks the code: your working file, or a saved version if you chose one (scheduled runs use the version pinned in the schedule).</li>
-  <li>It checks the code (the red and yellow lines on a card) and refuses to run on errors.</li>
-  <li>It runs the file from <b>its own folder</b> with the strategies Python environment. A <code>.py</code> runs as a script; a notebook runs every cell top to bottom, like Run All.</li>
-  <li>Your code talks to the OMS through <code>oms_client</code>. The OMS checks the order against the strategy's cash and positions, then sends it to Alpaca paper.</li>
-  <li>Everything printed is the run log. The app records the status, how many orders were sent, and which version ran.</li>
+  <li>You press Run or Test, or the schedule fires (even with the app closed).</li>
+  <li>The app checks the code and won't run it if there are errors.</li>
+  <li>It runs the file from its own folder. Notebooks run top to bottom.</li>
+  <li>Orders go through the OMS, which checks the strategy's cash, then to Alpaca paper.</li>
+  <li>Everything printed becomes the run log.</li>
 </ol>
 
 <h2>What the app gives your code</h2>
@@ -943,15 +1041,19 @@ oms.rebalance(target, latest_prices(set(target) | set(oms.holdings())))</pre>
 
 <h2>Where the code lives</h2>
 <ul>
-  <li><b>From template</b> or <b>Upload a copy</b>: the file sits in <code>strategies/&lt;id&gt;/</code>. Open it with the card's <i>Open in editor / Jupyter</i>.</li>
-  <li><b>Link a file</b>: the file stays where it is (any folder or repo on this laptop). Every run reads it fresh, so saving in your editor is all it takes. The app only stores a manifest and versions in <code>strategies/&lt;id&gt;/</code>.</li>
+  <li><b>Template</b> or <b>Upload</b>: in <code>strategies/&lt;id&gt;/</code>.</li>
+  <li><b>Link</b>: stays where it is; each run reads your latest save.</li>
 </ul>
 
-<h2>Cloud backup</h2>
-<p>Only the finished code that runs is backed up: the saved version you pick with <b>Use for schedule</b> in Versions. Drafts in the working file and your other saved versions stay on this laptop, and a strategy with no scheduled version isn't backed up. While the app is open and the OMS is running, that version is uploaded to the shared OMS database along with <code>strategy.json</code>, <code>models/</code>, and the schedule's time and days. Each card's <b>Cloud</b> row shows whether it's backed up. <code>runs/</code>, run history, and files over 10 MB stay on this laptop. A downloaded strategy gets that version as its working code, already picked for scheduled runs. Everyone on the team can download every strategy. Strategies that are in the cloud but not on this laptop are listed under <b>In the cloud</b> on My strategies, so after a reinstall you click <b>Download</b> and turn its schedule back on. If someone else changes a strategy, its card offers <b>Update</b>. If it changed on both laptops, choose <b>Keep mine</b> or <b>Use cloud's</b>.</p>
-
 <h2>Versions</h2>
-<p>A strategy made from an uploaded or linked file starts with its code saved as <code>v1</code>, used for scheduled runs. After that nothing is tracked automatically, and if no version is used for scheduled runs, the first one you save becomes it. When the code is in a state you want to keep, open <b>Versions</b> and <b>Save current code</b> with a label (<code>v1</code>, <code>2.0</code>…) and a name. The app copies the file into <code>strategies/&lt;id&gt;/versions/</code>. From there you can compare it with the working code, run it, restore it, or pin it so scheduled runs use that exact code while you keep editing. Every run in the history shows the version it ran (<i>working</i> = unsaved changes). For notebooks only code cells count, so running a notebook doesn't make it look modified.</p>
+<p>Save a version whenever the code works. Pick one with <b>Use for schedule</b> and scheduled runs use it while you keep editing.</p>
+
+<h2>Cloud backup</h2>
+<ul>
+  <li>The scheduled version, <code>strategy.json</code>, and <code>models/</code> are backed up while the OMS is running. Drafts and run logs stay on this laptop.</li>
+  <li>On <b>Strategies</b>, a cloud icon means you can download that strategy. Its schedule turns on.</li>
+  <li><b>Remove from this laptop</b> keeps the cloud copy. The trash button on a strategy deletes it everywhere.</li>
+</ul>
 
 <h2>Statuses</h2>
 <table class="panel"><tbody>
@@ -973,7 +1075,7 @@ oms.rebalance(target, latest_prices(set(target) | set(oms.holdings())))</pre>
 views.account = {
   interval: 5000,
   mount() {
-    return head("Portfolio", "Shared Alpaca paper account, with every OMS fill and held position attributed back to its strategy.",
+    return head("Portfolio", "The shared paper account, split by strategy.",
       `<a class="btn primary" href="#/order">New order</a>`) +
       chartPanel("acct-chart", "Account value", ["1D", "1W", "1M", "3M", "1Y"], "1W") + `<div id="body"></div>`;
   },
@@ -1021,7 +1123,7 @@ views.account = {
             <div><span>Buying power</span><strong>${money(a?.buying_power)}</strong></div>
           </div></div>
         <div class="panel"><div class="panel-head"><h2>Strategy attribution</h2><a href="#/strategies">View strategies</a></div>
-          <p class="muted" style="margin:14px 18px 6px;font-size:13px">Position tags are from OMS fills, not inferred from the shared brokerage account. <span class="chip local">blue</span> = on this laptop.</p>
+          <p class="muted" style="margin:14px 18px 6px;font-size:13px">Tags show which strategies hold each position. <span class="chip local">Blue</span> = on this laptop.</p>
           <div class="big-count"><strong>${spos.value ? SP.length : "—"}</strong><span class="muted">open strategy positions</span></div></div>
       </div>
       <div class="panel"><div class="panel-head"><div><h2>Top positions</h2><p>Account positions with OMS strategy allocation</p></div><span class="muted">${P.length} total</span></div>
@@ -1042,10 +1144,12 @@ views.account = {
 };
 
 // ---------- Strategies (every strategy in the OMS) ----------
+const CLOUD_DOWN = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14.5h-.5a3 3 0 0 1-.2-6 5 5 0 0 1 9.6-1.2 3.5 3.5 0 0 1-.4 7H14"/><path d="M10 9.5v7M7.5 14l2.5 2.5 2.5-2.5"/></svg>`;
+const cloudGet = (id) => `<button class="cloud-get tip-right" data-cloud-get="${esc(id)}" data-tip="Download" aria-label="Download ${esc(id)}">${CLOUD_DOWN}</button>`;
 views.strategies = {
   interval: 5000,
   mount() {
-    return head("Strategies", "Every strategy registered in the shared OMS, including teammates'. Register a strategy before it can trade; its id is required on every order.") +
+    return head("Strategies", "Every strategy on the team. Click a cloud icon to download one to this laptop.") +
       `<form class="form-row" id="reg-form">
         <label class="f" style="min-width:260px">Strategy id<input id="reg-id" placeholder="ritwij-test-straddle-volatility" required /></label>
         <label class="f">Cash budget<input id="reg-budget" value="100000" inputmode="decimal" required /></label>
@@ -1069,19 +1173,19 @@ views.strategies = {
   },
   draw(rows, removed, perf) {
     if (!$("body")) return;
-    const local = localIds();
-    const trash = (id) => `<button class="btn ghost icon-btn" data-delete="${esc(id)}" title="Delete or remove ${esc(id)}" aria-label="Delete ${esc(id)}">
+    const local = localIds(), inCloud = new Set((state.cloud.all || []).map((c) => c.strategy_id));
+    const where = (id) => local.has(id) ? `<span class="here-ico tip-right" data-tip="On this laptop">${ICONS.laptop}</span>` : inCloud.has(id) ? cloudGet(id) : "";
+    const trash = (id) => `<button class="btn ghost icon-btn" data-delete="${esc(id)}" title="Delete ${esc(id)} everywhere: cloud copy, this laptop, and the app" aria-label="Delete ${esc(id)}">
       <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg></button>`;
-    $("body").innerHTML = `<div class="panel">${rows.length ? `<table><thead><tr><th>Strategy</th><th class="num">Budget</th><th class="num">Equity</th><th class="num">Today</th><th class="num">Total return</th><th class="num">Cash left</th><th class="num">Reserved</th><th class="num">Realized</th><th class="num">Unrealized</th><th></th></tr></thead><tbody>
-      ${rows.map((s) => { const p = perf[s.id] || {}; return `<tr class="link" data-href="#/strategy/${enc(s.id)}"><td><a href="#/strategy/${enc(s.id)}">${esc(s.id)}</a>${local.has(s.id) ? ' <span class="chip local">on this laptop</span>' : ""}</td>
+    $("body").innerHTML = `<div class="panel">${rows.length ? `<table class="strat-table"><thead><tr><th>Strategy</th><th class="num">Budget</th><th class="num">Equity</th><th class="num">Today</th><th class="num">Total return</th><th class="num">Cash left</th><th class="num">Reserved</th><th></th></tr></thead><tbody>
+      ${rows.map((s) => { const p = perf[s.id] || {}, remote = !local.has(s.id) && inCloud.has(s.id); return `<tr class="link${remote ? " row-remote" : ""}" data-href="#/strategy/${enc(s.id)}"><td><a href="#/strategy/${enc(s.id)}">${esc(s.id)}</a>${where(s.id)}</td>
         <td class="num">${money(s.cash_budget)}</td><td class="num">${money(p.equity)}</td>
         ${pctCell(p.day_pct, `<div class="faint" style="font-size:11.5px">${signed(p.day_change)}</div>`)}
         ${pctCell(p.total_pct, `<div class="faint" style="font-size:11.5px">${signed(p.total_change)}</div>`)}
         <td class="num">${money(s.cash_remaining)}</td><td class="num">${money(s.cash_reserved)}</td>
-        <td class="num ${tone(s.realized_pnl)}">${money(s.realized_pnl)}</td><td class="num ${tone(s.unrealized_pnl)}">${money(s.unrealized_pnl)}</td>
         <td class="num">${trash(s.id)}</td></tr>`; }).join("")}
       </tbody></table>` : `<div class="empty">No strategies yet.</div>`}</div>
-      ${removed.length ? `<div class="section-head"><h2>Removed</h2><span class="faint">Traded strategies kept for the record. They no longer run from this laptop.</span></div>
+      ${removed.length ? `<div class="section-head"><h2>Removed</h2><span class="faint">Deleted strategies that traded, kept for the record</span></div>
       <div class="panel"><table><thead><tr><th>Strategy</th><th>Removed</th><th class="num">Equity at removal</th><th class="num">Total return at removal</th><th class="num">Fills</th><th class="num">Equity now</th><th class="num">Positions at removal</th><th></th></tr></thead><tbody>
       ${removed.map((s) => { const f = s.flag.final || {}, p = perf[s.id] || {}; return `<tr class="link removed-row" data-href="#/strategy/${enc(s.id)}">
         <td><a href="#/strategy/${enc(s.id)}">${esc(s.id)}</a> <span class="chip removed">removed</span></td>
@@ -1091,7 +1195,7 @@ views.strategies = {
         <td class="num">${f.fills ?? "—"}</td>
         <td class="num">${money(p.equity)}</td>
         <td class="num">${f.positions ?? "—"}</td>
-        <td class="num"><button class="btn sm" data-restore="${esc(s.id)}">Restore</button></td></tr>`; }).join("")}
+        <td class="num"><button class="btn sm" data-restore="${esc(s.id)}" >List again</button></td></tr>`; }).join("")}
       </tbody></table></div>` : ""}`;
   },
   bind() {
@@ -1106,40 +1210,200 @@ views.strategies = {
 };
 
 // ---------- Strategy detail ----------
+const ICONS = {
+  play: `<svg viewBox="0 0 14 14"><path d="M3 1.6v10.8a.6.6 0 0 0 .9.5l8.6-5.4a.6.6 0 0 0 0-1L3.9 1.1a.6.6 0 0 0-.9.5z" fill="currentColor"/></svg>`,
+  test: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h4M8.8 3v5L4.6 15a1.3 1.3 0 0 0 1.1 2h8.6a1.3 1.3 0 0 0 1.1-2L11.2 8V3"/><path d="M6.5 12h7"/></svg>`,
+  clock: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"/><path d="M10 6v4.2l2.8 1.8"/></svg>`,
+  laptop: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4" y="4.5" width="12" height="8.5" rx="1.2"/><path d="M2 15.5h16" stroke-linecap="round"/></svg>`,
+  save: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3h7.4L16 6.1v9.4a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 15.5z"/><path d="M7 3v4h5V3M7 17v-5h6v5"/></svg>`,
+  plus: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>`,
+};
+let stratTab = "overview";
+function showStratTab(id) {
+  if (!document.querySelector(`.tabs [data-stab="${stratTab}"]`)) stratTab = "overview";
+  document.querySelectorAll(".tabs [data-stab]").forEach((b) => b.classList.toggle("on", b.dataset.stab === stratTab));
+  document.querySelectorAll("[data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === stratTab));
+  if (stratTab === "overview") drawChart(`sc-${id}`);  // it can't size itself while hidden
+  if (stratTab === "files") renderFilesTab(id);
+  if (stratTab === "versions") { versionsFor = id; diffOpen = null; renderVersions(); }
+  if (stratTab === "settings") renderSettings(id);
+}
+let detailsFor = null;
+function openDetails(sid) {
+  const s = localFor(sid); if (!s) return;
+  closeOverlays(); openMenu = null; detailsFor = sid;
+  $("det-title").textContent = `Edit ${sid}`;
+  $("det-name").value = s.name; $("det-name").placeholder = sid;
+  $("det-desc").value = s.custom_description; $("det-desc").placeholder = s.description || "What it trades and how";
+  $("det-id").textContent = `Strategy id: ${sid}. The id tags its orders, so it can't change.`;
+  $("details").classList.add("open"); $("scrim").classList.add("open");
+  $("det-name").focus();
+}
+async function saveDetails() {
+  const btn = $("det-save"); btn.disabled = true;
+  const res = await api().set_details(detailsFor, $("det-name").value, $("det-desc").value);
+  btn.disabled = false;
+  if (!res.ok) return toast(res.error, true);
+  closeOverlays(); toast("Details saved");
+  await refresh(); if (current.name === "strategy") views.strategy.update(current.arg);
+}
+
+// Save the working code as a new version: enabled only when it differs from every saved version.
+const saveBtn = (s) => `<button class="btn icon-sq${s.matches_version ? "" : " on"}" data-vsave="${esc(s.strategy_id)}" ${s.matches_version ? "disabled" : ""}
+  data-tip="${s.matches_version ? `No changes since ${esc(s.matches_version)}` : "Save version"}" aria-label="Save version">${ICONS.save}</button>`;
+async function openSaveVersion(sid) {
+  const { strategy: s, next_label } = await api().versions(sid);
+  if (s.matches_version) return toast(`No changes since ${s.matches_version}`);
+  versionsFor = sid;
+  $("vsave-title").textContent = `Save ${sid} as a version`;
+  $("vs-label").value = next_label; $("vs-name").value = ""; $("vs-note").value = "";
+  $("vsave").classList.add("open"); $("scrim").classList.add("open");
+  $("vs-name").focus();
+}
+async function saveVersionNow() {
+  const sid = versionsFor, btn = $("vs-save"); btn.disabled = true;
+  const res = await api().save_version(sid, $("vs-label").value, $("vs-name").value, $("vs-note").value);
+  btn.disabled = false;
+  if (!res.ok) return toast(res.error, true);
+  closeOverlays(); versionsFor = sid;
+  toast(`Saved ${res.version.label} · ${res.version.name}`); diffOpen = null;
+  await refresh(); if (current.name === "strategy") views.strategy.update(sid);
+  renderVersions();
+}
+// ---------- strategy settings tab ----------
+async function renderSettings(id) {
+  const box = $("s-settings"); if (!box) return;
+  const flag = (await api().strategy_flags())[id], l = localFor(id), sid = esc(id);
+  if (flag) { box.innerHTML = `<div class="card empty">Deleted on ${when(flag.flagged_at)}.</div>`; return; }
+  const st = l && scheduleText(l.schedule);
+  box.innerHTML = (l ? `
+    <section class="panel panel-body set-sec">
+      <h2>Details</h2>
+      <div class="field"><label class="f">Name<input id="set-name" placeholder="${sid}" value="${esc(l.name)}" /></label></div>
+      <div class="field"><label class="f">Description<textarea id="set-desc" placeholder="${esc(l.description || "What it trades and how")}">${esc(l.custom_description)}</textarea></label></div>
+      <div class="set-row"><span class="faint">Strategy id <span class="mono">${sid}</span> tags its orders, so it can't change.</span><button class="btn primary" id="set-save">Save details</button></div>
+    </section>
+    <section class="panel panel-body set-sec">
+      <h2>Schedule</h2>
+      <div class="set-row">
+        <div><b class="${st ? "" : "faint"}">${st ? esc(st) : "Off"}</b>
+          <div class="muted" style="font-size:13px;margin-top:3px">${st ? `Runs ${l.scheduled_version ? `<span class="chip">${esc(l.scheduled_version)}</span>` : "the working code"}, even when the app is closed.` : "Set a time to run it automatically."}</div></div>
+        <button class="btn" data-sched="${sid}">${st ? "Change" : "Set schedule"}</button>
+      </div>
+    </section>` : "") + `
+    <section class="panel panel-body set-sec">
+      <h2>Installed on</h2>
+      <div id="set-installs"><span class="muted"><span class="spin"></span>Loading…</span></div>
+    </section>
+    <section class="panel panel-body set-sec set-danger">
+      <h2>Remove or delete</h2>
+      ${l ? `<div class="set-row"><div><b>Remove from this laptop</b><div class="muted" style="font-size:13px;margin-top:3px">Moves its folder to the Trash. The cloud copy stays.</div></div>
+        <button class="btn" data-remove-local="${sid}">Remove…</button></div>` : ""}
+      <div class="set-row"><div><b>Delete strategy</b><div class="muted" style="font-size:13px;margin-top:3px">Deletes it everywhere, including the cloud copy.</div></div>
+        <button class="btn danger" data-delete="${sid}">Delete…</button></div>
+    </section>`;
+  renderInstalls(id);
+  const save = $("set-save");
+  if (save) save.onclick = async () => {
+    save.disabled = true;
+    const res = await api().set_details(id, $("set-name").value, $("set-desc").value);
+    save.disabled = false;
+    if (!res.ok) return toast(res.error, true);
+    toast("Details saved"); await refresh(); views.strategy.update(id);
+  };
+}
+
+async function renderInstalls(id) {
+  const res = await api().strategy_installs(id), box = $("set-installs");
+  if (!box || current.arg !== id) return;
+  if (!res.ok) {
+    box.innerHTML = /add_strategy_installs\.sql/.test(res.error)
+      ? `<span class="muted">Needs a one-time database update: a Supabase owner runs <span class="mono">backend/add_strategy_installs.sql</span>.</span>`
+      : `<span class="muted">Couldn't load: ${esc(res.error)}</span>`;
+    return;
+  }
+  if (!res.installs.length) { box.innerHTML = `<span class="muted">Not set up on any laptop.</span>`; return; }
+  const name = (h) => esc(h.replace(/\.local$/, ""));
+  box.innerHTML = res.installs.map((i) => {
+    const open = Date.now() - new Date(i.seen_at) < 120e3, st = scheduleText(i.schedule && { ...i.schedule, enabled: true });
+    return `<div class="set-row install">
+      <div><b>${name(i.host)}</b>${i.host === res.host ? ' <span class="faint">(this laptop)</span>' : ""}
+        <div class="muted" style="font-size:13px;margin-top:3px">${i.version ? `<span class="chip">${esc(i.version)}</span> ` : ""}${st ? esc(st) : "No schedule"}${
+          i.last_run_at ? ` · last run ${ago(i.last_run_at)}${i.last_run_status ? ` (${esc(i.last_run_status.replaceAll("_", " "))})` : ""}` : " · never run"}</div></div>
+      <span class="${open ? "up" : "faint"}" style="font-size:13px;white-space:nowrap">${open ? "● App open" : `Last open ${ago(i.seen_at)}`}</span>
+    </div>`;
+  }).join("");
+}
+
+function stratHead(id, flag) {
+  const l = localFor(id), sid = esc(id);
+  const ib = (attr, icon, tip, extra = "") => `<button class="btn icon-sq${extra}" ${attr}="${sid}" data-tip="${tip}" aria-label="${tip}">${icon}</button>`;
+  if (l) {
+    const st = scheduleText(l.schedule), errors = l.checks.some((c) => c.level === "error");
+    return {
+      meta: (l.name ? `<span class="mono faint">${sid}</span>` : "") + `<span class="here-ico" style="margin:0" title="On this laptop">${ICONS.laptop}</span>` +
+        (l.matches_version ? `<span class="chip">${esc(l.matches_version)}</span>` : '<span class="warnc">Unsaved changes</span>') +
+        `<span class="${st ? "muted" : "faint"}">${st ? esc(st) : "No schedule"}</span>`,
+      actions: `<button class="btn primary play" data-run="${sid}" ${errors ? "disabled" : ""} data-tip="Run" aria-label="Run">${ICONS.play}</button>` +
+        `<button class="btn icon-sq" data-dry="${sid}" ${errors ? "disabled" : ""} data-tip="Test" aria-label="Test run">${ICONS.test}</button>` +
+        saveBtn(l),
+    };
+  }
+  if (flag) return { meta: "", actions: "" };
+  return { meta: "", actions: inCloudNow(id) ? "" : `<button class="btn" data-new="${sid}">${ICONS.plus.replace("<svg", '<svg width="15" height="15"')} Add code</button>` };
+}
 views.strategy = {
   interval: 5000,
   mount(id) {
-    return `<a class="back" href="#/strategies">← Strategies</a>` +
-      head(id, "Orders, fills, and the positions booked from this strategy id.",
-        `<button class="btn danger" data-delete="${esc(id)}">Delete strategy</button>`) +
-      `<div id="flag-bar"></div><div id="local-bar"></div>` +
-      chartPanel(`sc-${id}`, "Strategy value", ["1W", "1M", "3M", "1Y", "ALL"], "ALL") +
-      `<div id="risk">${statsPanel(state.stats[id])}</div><div id="body"></div>`;
+    return `<a class="back" href="#/strategies">← Strategies</a>
+      <div class="page-head"><div><h1 id="s-title">${esc(localFor(id)?.name || id)}</h1><p class="strat-meta" id="s-meta"></p><p class="muted" id="s-desc" style="margin-top:6px"></p></div><div class="head-actions" id="s-actions"></div></div>
+      <div id="flag-bar"></div><div id="get-bar"></div>
+      <div class="tabs" role="tablist">
+        <button type="button" data-stab="overview">Overview</button>
+        <button type="button" data-stab="positions">Positions<small id="s-npos"></small></button>
+        <button type="button" data-stab="orders">Orders<small id="s-nord"></small></button>
+        ${localFor(id) ? '<button type="button" data-stab="versions">Versions</button>' : ""}
+        <button type="button" data-stab="files">Files</button>
+        <button type="button" data-stab="settings">Settings</button>
+      </div>
+      <div class="tab-pane" data-pane="overview"><div id="s-stats"></div>${chartPanel(`sc-${id}`, "Strategy value", ["1W", "1M", "3M", "1Y", "ALL"], "ALL")}<div id="risk">${statsPanel(state.stats[id])}</div></div>
+      <div class="tab-pane" data-pane="positions"><div id="body"></div></div>
+      <div class="tab-pane" data-pane="orders" id="s-orders"></div>
+      <div class="tab-pane" data-pane="versions"><div id="v-body"></div></div>
+      <div class="tab-pane" data-pane="files" id="s-files"></div>
+      <div class="tab-pane" data-pane="settings" id="s-settings"></div>`;
   },
-  bind(id) { loadChart(`sc-${id}`, (r) => api().strategy_history(id, r)); },
+  bind(id) { filesFor = null; showStratTab(id); loadChart(`sc-${id}`, (r) => api().strategy_history(id, r)); },
   async update(id) {
-    if (!state.oms.backend) return ($("body").innerHTML = omsDown());
+    const flag = (await api().strategy_flags())[id];
+    const h = stratHead(id, flag);
+    if ($("s-meta") && $("s-meta").innerHTML !== h.meta) $("s-meta").innerHTML = h.meta;  // unchanged: keep hover state
+    const l = localFor(id);
+    if ($("s-title")) $("s-title").textContent = l?.name || id;
+    if ($("s-desc")) $("s-desc").textContent = l?.custom_description || "";
+    if ($("s-actions") && $("s-actions").dataset.html !== h.actions) { $("s-actions").innerHTML = h.actions; $("s-actions").dataset.html = h.actions; }
+    const getBar = !flag && !localFor(id) && inCloudNow(id) ? `<div class="banner info actions" style="justify-content:space-between">
+      <span>Download this strategy to run it on this laptop.</span>
+      <button class="btn sm primary" data-cloud-get="${esc(id)}">${CLOUD_DOWN.replace("<svg", '<svg width="15" height="15"')} Download</button></div>` : "";
+    if ($("get-bar").innerHTML !== getBar) $("get-bar").innerHTML = getBar;
+    $("flag-bar").innerHTML = flag ? `<div class="banner">${flag.state === "removed"
+      ? `Deleted on ${when(flag.flagged_at)}. Kept for its trade record. <button class="btn sm" data-restore="${esc(id)}">List again</button>`
+      : `Deleted on ${when(flag.flagged_at)} (never traded).`}</div>` : "";
+    if (stratTab === "files") renderFilesTab(id);
+    if (!state.oms.backend) { $("body").innerHTML = $("s-stats").innerHTML = $("s-orders").innerHTML = omsDown(); return; }
     refreshChartIfStale(`sc-${id}`);
     api().strategy_stats([id]).then((r) => { state.stats[id] = r[id]; if ($("risk") && current.arg === id) $("risk").innerHTML = statsPanel(r[id]); });
-    const flag = (await api().strategy_flags())[id];
-    $("flag-bar").innerHTML = flag ? `<div class="banner">${flag.state === "removed"
-      ? `Removed on ${when(flag.flagged_at)}. Kept here for the record. <button class="btn sm" data-restore="${esc(id)}">Restore</button>`
-      : `Deleted on ${when(flag.flagged_at)} (never traded).`}</div>` : "";
-    const delBtn = document.querySelector(`[data-delete="${CSS.escape(id)}"]`);
-    if (delBtn) delBtn.style.display = flag ? "none" : "";
-    const l = localFor(id);
-    $("local-bar").innerHTML = l ? `<div class="banner info actions" style="justify-content:space-between">
-      <span>Runs from <span class="mono">${esc(l.path.split("/").pop())}</span> on this laptop${l.matches_version ? " · " + esc(l.matches_version) : ""}${scheduleText(l.schedule) ? " · " + esc(scheduleText(l.schedule)) : ""}</span>
-      <span class="actions"><button class="btn sm primary" data-run="${esc(id)}">Run now</button><button class="btn sm" data-dry="${esc(id)}">Test run</button><button class="btn sm" data-versions="${esc(id)}">Versions</button></span></div>` : "";
     let b, perf;
     try {
       b = await oms("GET", `/api/strategies/${enc(id)}/book`);
       perf = await api().strategy_performance(id, b);
-    } catch (e) { return ($("body").innerHTML = `<div class="banner">${esc(e.message)}</div>`); }
+    } catch (e) { return ($("body").innerHTML = $("s-stats").innerHTML = $("s-orders").innerHTML = `<div class="banner">${esc(e.message)}</div>`); }
+    if (!$("body")) return;
     const s = b.strategy, sum = perf.summary || {}, pp = perf.positions || {};
     const sorted = [...b.positions].sort((x, y) => (pp[y.symbol]?.total_pct ?? 0) - (pp[x.symbol]?.total_pct ?? 0));
-    $("body").innerHTML = `
-      <div class="stats">
+    $("s-npos").textContent = b.positions.length || ""; $("s-nord").textContent = b.orders.length || "";
+    $("s-stats").innerHTML = `
+      <div class="stats four">
         <div class="stat"><span>Equity</span><strong>${money(sum.equity)}</strong></div>
         <div class="stat"><span>Today</span><strong class="${tone(sum.day_change)}">${pct(sum.day_pct)}</strong> <span class="${tone(sum.day_change)}" style="display:inline">${signed(sum.day_change)}</span></div>
         <div class="stat"><span>Total return</span><strong class="${tone(sum.total_change)}">${pct(sum.total_pct)}</strong> <span class="${tone(sum.total_change)}" style="display:inline">${signed(sum.total_change)}</span></div>
@@ -1148,15 +1412,15 @@ views.strategy = {
         <div class="stat"><span>Budget</span><strong>${money(s.cash_budget)}</strong></div>
         <div class="stat"><span>Realized</span><strong class="${tone(s.realized_pnl)}">${money(s.realized_pnl)}</strong></div>
         <div class="stat"><span>Unrealized</span><strong class="${tone(s.unrealized_pnl)}">${money(s.unrealized_pnl)}</strong></div>
-      </div>
-      <div class="panel"><div class="panel-head"><div><h2>Positions</h2><p>Today is against the previous close (or cost, if bought today). Total is against average cost.</p></div><span class="muted">${b.positions.length}</span></div>
+      </div>`;
+    $("body").innerHTML = `
+      <div class="panel">
         ${b.positions.length ? `<table><thead><tr><th>Symbol</th><th class="num">Qty</th><th class="num">Avg</th><th class="num">Last</th><th class="num">Value</th><th class="num">Today</th><th class="num">Total</th><th class="num">Unrealized</th></tr></thead><tbody>
           ${sorted.map((p) => { const q = pp[p.symbol] || {}; return `<tr><td><a href="#/position/${enc(p.symbol)}">${esc(p.symbol)}</a>${q.opened_today ? ' <span class="chip off">new today</span>' : ""}</td>
             <td class="num">${shares(p.qty)}</td><td class="num">${price(p.avg_price)}</td><td class="num">${price(q.price)}</td><td class="num">${money(q.price * p.qty)}</td>
             ${pctCell(q.day_pct)}${pctCell(q.total_pct)}<td class="num ${tone(p.unrealized_pnl)}">${money(p.unrealized_pnl)}</td></tr>`; }).join("")}
-          </tbody></table>` : `<div class="empty">No open positions for this strategy.</div>`}</div>
-      <div class="panel"><div class="panel-head"><h2>Orders</h2><span class="muted">${b.orders.length}</span></div>
-        ${b.orders.length ? orderTable(b.orders) : `<div class="empty">No orders yet.</div>`}</div>`;
+          </tbody></table>` : `<div class="empty">No open positions.</div>`}</div>`;
+    $("s-orders").innerHTML = `<div class="panel">${b.orders.length ? orderTable(b.orders) : `<div class="empty">No orders yet.</div>`}</div>`;
   },
 };
 function orderLabel(o) { return o.order_class === "mleg" ? o.legs.map((l) => `${l.side} ${l.symbol}`).join(" / ") : `${o.side} ${o.symbol}`; }
@@ -1176,7 +1440,7 @@ function orderTable(orders) {
 views.position = {
   interval: 5000,
   mount(sym) {
-    return `<a class="back" href="#/account">← Portfolio</a>` + head(sym, "The paper account's position, and the strategy trades that make it up.") + `<div id="body"></div>`;
+    return `<a class="back" href="#/account">← Portfolio</a>` + head(sym, "This position and the strategy trades behind it.") + `<div id="body"></div>`;
   },
   async update(sym) {
     if (!state.oms.backend) return ($("body").innerHTML = omsDown());
@@ -1210,7 +1474,7 @@ let ticket = { mode: "equity", legs: 2 };
 views.order = {
   interval: 0,
   mount() {
-    return head("New order", "Send a finished equity, option, or multi-leg order. Alpaca executes it on the paper account.") + `<div id="body"></div>`;
+    return head("New order", "Place a stock, option, or multi-leg order on the paper account.") + `<div id="body"></div>`;
   },
   async update() {
     if (!state.oms.backend) return ($("body").innerHTML = omsDown());
@@ -1341,10 +1605,27 @@ async function refresh() {
   Object.assign(state, { oms: o, strategies, runs, cloud: cloudState });
   renderOms();
   $("nav-local").textContent = strategies.length || "";
+  $("nav-cloud").textContent = (cloudState.available || []).length || "";
   if (current.name === "desk") views.desk.update();
   if (omsChanged && current.name && current.name !== "desk") views[current.name].update(current.arg).catch(() => {});
   if (openRunId) refreshLog();
   if (finished || (omsChanged && o.backend)) refreshBooks();
+}
+// Ctrl/⌘R: drop every cache (here and in the app process) and redraw the current page from scratch.
+async function hardRefresh() {
+  if (hardRefresh.busy) return;
+  hardRefresh.busy = true; toast("Refreshing…");
+  try {
+    await api().refresh_all();
+    Object.keys(viewCache).forEach((k) => delete viewCache[k]);
+    Object.values(chartState).forEach((c) => { c.data = null; c.loadedAt = 0; });
+    state.stats = {}; filesFor = null;
+    await refresh(); await refreshBooks();
+    current = { ...current, name: null };  // route() remounts the view; the tab you're on stays
+    await route();
+    toast("Refreshed");
+  } catch (e) { toast(`Couldn't refresh: ${e.message || e}`, true); }
+  finally { hardRefresh.busy = false; }
 }
 async function refreshBooks() {
   state.books = await api().strategy_books();
@@ -1371,71 +1652,157 @@ async function refreshLog() {
   $("log-reveal").disabled = !run.output_path;
 }
 function closeOverlays() {
-  openRunId = null; schedNotebook = null; versionsFor = null;
-  ["drawer", "vdrawer", "scrim", "sched", "newstrat"].forEach((id) => $(id).classList.remove("open"));
+  openRunId = null; schedNotebook = null;
+  ["drawer", "scrim", "sched", "newstrat", "vsave", "details"].forEach((id) => $(id).classList.remove("open"));
+}
+
+async function removeLocalFlow(sid) {
+  const c = state.cloud.strategies?.[sid], s = localFor(sid);
+  const backed = c && c.state === "synced";
+  let msg = `Remove ${sid} from this laptop?\n\nIts folder moves to the Trash${s?.source === "linked" ? " (not your linked file)" : ""} and its schedule turns off.\n\n` +
+    (backed ? `The cloud copy stays, so you can download it again from Strategies.`
+      : `It isn't fully backed up, so the Trash will have the only copy.`);
+  if (!confirm(msg)) return;
+  const res = await api().remove_local(sid);
+  if (!res.ok) return toast(res.error, true);
+  toast(`${sid} removed from this laptop`);
+  closeOverlays(); openMenu = null;
+  await refresh(); refreshBooks(); route();
+}
+
+// ---------- cloud files (the strategy page's Files tab) ----------
+let fb = { sid: null, list: null, path: null, open: new Set() }, filesFor = null;
+function renderFilesTab(id) {
+  const key = `${id}|${!!state.oms.backend}`;
+  if (filesFor === key) return;  // already showing; polls don't reload it
+  filesFor = key;
+  const box = $("s-files"); if (!box) return;
+  if (!state.oms.backend) { box.innerHTML = `<div class="card empty">Start the OMS to see the cloud files.</div>`; return; }
+  box.innerHTML = `<div class="panel fb-panel"><div class="fb-top" id="c-sub"></div>
+    <div class="fb"><nav class="fb-tree" id="c-tree"></nav><div class="fb-main"><div class="fb-head" id="c-head"></div><div class="fb-about" id="c-about"></div><div class="fb-body" id="c-body"></div></div></div></div>`;
+  openFiles(id);
+}
+async function openFiles(sid) {
+  fb = { sid, list: null, path: null, open: new Set() };
+  $("c-sub").textContent = "Cloud copy";
+  $("c-body").innerHTML = '<div class="fb-empty"><span class="spin"></span>Loading the cloud copy…</div>';
+  const res = await api().files(sid);
+  if (!$("c-body") || fb.sid !== sid) return;
+  if (!res.ok) {
+    const missing = /no cloud copy/.test(res.error), c = state.cloud.strategies?.[sid];
+    $("s-files").innerHTML = `<div class="card empty">${!missing ? `Couldn't load the cloud copy: ${esc(res.error)}`
+      : !localFor(sid) ? "No code for this strategy."
+      : c?.state === "no_version" ? "Not backed up yet. Pick a version with <b>Use for schedule</b> in Versions."
+      : "Not backed up yet. It uploads within a minute while the OMS is running."}</div>`;
+    return;
+  }
+  if (!res.files.length) { $("s-files").innerHTML = `<div class="card empty">The cloud copy was deleted.</div>`; return; }
+  fb.list = res;
+  const total = res.files.reduce((n, f) => n + f.size, 0);
+  const label = Object.values(res.marks)[0]?.split(" · ")[0];  // the backed-up version, e.g. v1
+  $("c-sub").innerHTML = `Cloud copy${label ? ` <span class="chip">${esc(label)}</span>` : ""} · read-only ` +
+    `<span class="faint">· ${res.files.length} files · ${kb(total)} · uploaded ${ago(res.updated_at)}${res.updated_by ? " from " + esc(res.updated_by.replace(/\.local$/, "")) : ""}</span>`;
+  fb.path = res.open;
+  for (const f of res.files) f.path.split("/").slice(0, -1).forEach((_, i, a) => fb.open.add(a.slice(0, i + 1).join("/")));
+  renderTree(); showFile(fb.path);
+}
+const kb = (n) => n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(0) + " KB" : (n / 1048576).toFixed(1) + " MB";
+// what each file in a cloud copy is for: [short tag, sentence]
+function fileAbout(path) {
+  const mark = fb.list.marks[path];
+  if (mark) return ["code", "The code that runs on schedule."];
+  if (path === "strategy.json") return ["settings", "Name, description, and scheduled version."];
+  if (path.startsWith("models/")) return ["model", "Model file loaded by the code."];
+  return ["file", "Support file."];
+}
+function renderTree() {
+  const root = { dirs: {}, files: [] };
+  for (const f of fb.list.files) {
+    const parts = f.path.split("/");
+    let node = root;
+    parts.slice(0, -1).forEach((d, i) => { node = node.dirs[d] ??= { dirs: {}, files: [], path: parts.slice(0, i + 1).join("/") }; });
+    node.files.push(f);
+  }
+  const draw = (node, depth) => Object.keys(node.dirs).sort().map((d) => {
+    const sub = node.dirs[d], open = fb.open.has(sub.path);
+    return `<button class="dir" data-fdir="${esc(sub.path)}" style="padding-left:${8 + depth * 14}px">${open ? "▾" : "▸"} <span class="name">${esc(d)}/</span><span class="tag">${countFiles(sub)}</span></button>` +
+      (open ? draw(sub, depth + 1) : "");
+  }).join("") + node.files.map((f) => {
+    const [tag] = fileAbout(f.path);
+    return `<button class="${f.path === fb.path ? "on" : ""}" data-fpath="${esc(f.path)}" title="${esc(kb(f.size))}" style="padding-left:${22 + depth * 14}px"><span class="name">${esc(f.path.split("/").pop())}</span><span class="tag">${tag}</span></button>`;
+  }).join("");
+  $("c-tree").innerHTML = draw(root, 0) || '<div class="fb-empty">No files</div>';
+}
+function countFiles(node) { return node.files.length + Object.values(node.dirs).reduce((n, d) => n + countFiles(d), 0); }
+async function showFile(path) {
+  fb.path = path; renderTree();
+  const f = fb.list.files.find((x) => x.path === path), mark = fb.list.marks[path];
+  $("c-head").innerHTML = `<span class="mono">${esc(path)}</span>${mark ? ` <span class="chip">${esc(mark)}</span>` : ""}<span class="faint">${kb(f.size)}</span>`;
+  $("c-about").textContent = fileAbout(path)[1];
+  $("c-body").innerHTML = '<div class="fb-empty">Loading…</div>';
+  const res = await api().file(fb.sid, path);
+  if (fb.path !== path) return;
+  if (!res.ok) { $("c-body").innerHTML = `<div class="fb-empty">${esc(res.error)}</div>`; return; }
+  if (res.kind === "binary") { $("c-body").innerHTML = `<div class="fb-empty">Binary file (${(res.size / 1024).toFixed(0)} KB). It can't be shown here.</div>`; return; }
+  if (res.kind === "notebook") {
+    let n = 0;
+    $("c-body").innerHTML = res.cells.map((c) => c.type === "markdown"
+      ? `<div class="nb-md">${esc(c.source)}</div>`
+      : `<div class="nb-cell"><div class="nb-tag">In [${++n}]</div><pre>${esc(c.source) || " "}</pre>${c.output ? `<pre class="nb-out">${esc(c.output)}</pre>` : ""}</div>`).join("") || '<div class="fb-empty">Empty notebook</div>';
+    return;
+  }
+  const lines = res.text.split("\n");
+  $("c-body").innerHTML = (res.truncated ? `<div class="banner" style="margin:12px 16px">File too big: showing the start only.</div>` : "") +
+    `<div class="fb-code"><div class="ln">${lines.map((_, i) => i + 1).join("\n")}</div><pre>${esc(res.text)}</pre></div>`;
 }
 
 // ---------- versions drawer ----------
 let versionsFor = null, diffOpen = null;
-async function openVersions(sid) {
-  versionsFor = sid; diffOpen = null;
-  $("vdrawer").classList.add("open"); $("scrim").classList.add("open");
-  renderVersions();
+function openVersions(sid) {  // the strategy page's Versions tab
+  stratTab = "versions";
+  if (current.name === "strategy" && current.arg === sid) return showStratTab(sid);
+  location.hash = `#/strategy/${enc(sid)}`;
 }
 async function renderVersions(keepForm) {
-  const sid = versionsFor; if (!sid) return;
+  const sid = versionsFor; if (!sid || !$("v-body")) return;
   const { strategy: s, next_label } = await api().versions(sid);
   const form = keepForm ? { label: $("v-label")?.value, name: $("v-name")?.value, note: $("v-note")?.value } : null;
-  $("v-title").textContent = `Versions · ${sid}`;
-  $("v-sub").innerHTML = "Save a copy of your code whenever it works, so you can always go back.";
   const unchanged = !!s.matches_version;
   const versions = [...s.versions].reverse();
+  const L = (x) => esc(x);
   $("v-body").innerHTML = `
-    <div class="vsummary">
-      <div class="vtile"><label>Your code right now</label>${
-        !s.versions.length ? "<b>Not saved yet</b>" :
-        unchanged ? `<b>Same as <span class="chip">${esc(s.matches_version)}</span></b>` : '<b class="warnc">Unsaved changes</b>'}</div>
-      <div class="vtile"><label>Scheduled runs use</label><b>${s.scheduled_version ? `<span class="chip">${esc(s.scheduled_version)}</span>` : "Your latest code"}</b></div>
+    <div class="vstatus">
+      <span>Working code <b>${!s.versions.length ? "not saved yet" : unchanged ? `same as <span class="chip">${L(s.matches_version)}</span>` : '<span class="warnc">unsaved changes</span>'}</b></span>
+      <span>Scheduled runs use <b>${s.scheduled_version ? `<span class="chip">${L(s.scheduled_version)}</span>` : "the working code"}</b></span>
+      ${!unchanged && s.versions.length ? `<button class="linkish" data-diff="${L(s.latest_version)}">See changes since ${L(s.latest_version)}</button>` : ""}
     </div>
-    <div class="panel panel-body vsave">
-      ${unchanged ? `<p class="muted" style="margin:0">Nothing new to save. Edit the code, then come back.</p>` : `
-      <h2>Save this code as a version</h2>
-      <div class="vform">
+    ${unchanged ? "" : `<div class="panel panel-body" style="margin-bottom:18px">
+      <div class="vsave-row">
         <label class="f">Label<input id="v-label" value="${esc(form?.label ?? next_label)}" /></label>
         <label class="f">What changed<input id="v-name" placeholder="e.g. Added volatility filter" value="${esc(form?.name ?? "")}" /></label>
-        <label class="f full">Notes (optional)<input id="v-note" placeholder="Why, results, anything to remember" value="${esc(form?.note ?? "")}" /></label>
-        <div class="full actions" style="justify-content:flex-end">
-          ${s.versions.length ? `<button class="btn ghost" data-diff="${esc(s.latest_version)}">See changes since ${esc(s.latest_version)}</button>` : ""}<button class="btn primary" id="v-save">Save version</button>
-        </div>
-      </div>`}
-    </div>
+        <label class="f">Note<input id="v-note" placeholder="Optional" value="${esc(form?.note ?? "")}" /></label>
+        <button class="btn primary" id="v-save" style="height:36px">Save version</button>
+      </div></div>`}
     <div id="v-diff-top"></div>
-    <h2 class="vhist-title">History</h2>
-    ${versions.length ? `<div class="vtimeline">${versions.map((v) => {
-      const cur = v.label === s.matches_version, sch = v.label === s.scheduled_version;
-      return `<div class="vrow ${cur ? "current" : ""}">
-        <div class="vrow-top">
-          <span class="chip">${esc(v.label)}</span>
-          <b class="vname">${esc(v.name || "Untitled")}</b>
-          ${cur ? '<span class="badge succeeded">current</span>' : ""}
-          ${sch ? '<span class="badge plan_only">scheduled</span>' : ""}
-          <span class="faint vdate" title="${esc(v.hash)}">${when(v.created_at)}</span>
+    ${versions.length ? `<div class="vlist">${versions.map((v) => {
+      const cur = v.label === s.matches_version, sch = v.label === s.scheduled_version, l = L(v.label);
+      return `<div class="vitem-wrap"><div class="vitem">
+        <span class="chip" style="justify-self:start">${l}</span>
+        <div class="vtitle"><b>${esc(v.name || "Untitled")}</b>${v.note ? `<p class="vnote" title="${esc(v.note)}">${esc(v.note)}</p>` : ""}</div>
+        <div class="vtags">
+          ${sch ? `<span class="vtag sched">${ICONS.clock}Scheduled</span>` : ""}
+          <span class="faint" title="${esc(v.hash)}">${when(v.created_at)}</span>
         </div>
-        ${v.note ? `<p class="vnote">${esc(v.note)}</p>` : ""}
-        <div class="vrow-actions">
-          <button class="btn sm" data-vrun="${esc(v.label)}">Run</button>
-          <button class="btn sm" data-vdry="${esc(v.label)}">Test run</button>
-          ${cur ? "" : `<button class="linkish" data-diff="${esc(v.label)}">Compare</button><button class="linkish" data-vrestore="${esc(v.label)}">Restore</button>`}
-          <button class="linkish" data-vsched="${sch ? "" : esc(v.label)}">${sch ? "Stop using for schedule" : "Use for schedule"}</button>
-          <button class="linkish danger" data-vdelete="${esc(v.label)}">Delete</button>
+        <div class="vacts">
+          <button class="btn primary play" data-vrun="${l}" data-tip="Run" aria-label="Run ${l}">${ICONS.play}</button>
+          <button class="btn icon-sq" data-vdry="${l}" data-tip="Test" aria-label="Test run ${l}">${ICONS.test}</button>
+          <details class="vmore menu-wrap"><summary class="btn icon-sq" aria-label="More">⋯</summary><div class="menu" role="menu">
+            <button data-vsched="${sch ? "" : l}">${sch ? "Stop using for schedule" : "Use for schedule"}</button>
+            ${cur ? "" : `<button data-diff="${l}">Compare with working code</button><button data-vrestore="${l}">Restore as working code</button>`}
+            <button class="danger" data-vdelete="${l}">Delete</button>
+          </div></details>
         </div>
-        <div id="diff-${esc(v.label)}"></div>
-      </div>`; }).join("")}</div>` : `<div class="card empty">No versions yet. Save one above when the code works.</div>`}
-    <div class="danger-zone">
-      <h2 style="margin-bottom:6px">Delete strategy</h2>
-      <p class="muted" style="margin:0 0 10px;font-size:13px">If it never traded, it's deleted from this app and its folder goes to the Trash. If it traded, it's removed from My strategies but its code and record are kept under Strategies → Removed. You'll see exactly which before anything happens.</p>
-      <button class="btn danger" data-delete="${esc(sid)}">Delete ${esc(sid)}…</button>
-    </div>`;
+      </div><div id="diff-${l}"></div></div>`; }).join("")}</div>` : `<div class="card empty">No versions yet.</div>`}`;
   if (diffOpen) showDiff(diffOpen, true);
 }
 async function showDiff(label, rerender) {
@@ -1457,7 +1824,7 @@ function openSchedule(sid) {
   $("sched-version").innerHTML = `<option value="">Working code (latest edits${s.source === "linked" ? " to the linked file" : ""})</option>` +
     [...s.versions].reverse().map((v) => `<option value="${esc(v.label)}" ${v.label === s.scheduled_version ? "selected" : ""}>${esc(v.label)} · ${esc(v.name)}</option>`).join("");
   $("sched-title").textContent = "Schedule " + (s.strategy_id || s.title);
-  $("sched-enabled").checked = s.schedule ? sc.enabled : true;
+  $("sched-off").style.display = scheduleText(s.schedule) ? "" : "none";
   $("sched-time").value = String(sc.hour).padStart(2, "0") + ":" + String(sc.minute).padStart(2, "0");
   schedDays = new Set(sc.weekdays);
   renderDays(); updateEt();
@@ -1481,6 +1848,7 @@ document.addEventListener("click", async (e) => {
     if (!res.ok) return toast(res.error, true);
     toast(`Saved ${res.version.label} · ${res.version.name}`); diffOpen = null; refresh(); return renderVersions();
   }
+  document.querySelectorAll("details.vmore[open]").forEach((d) => { if (!d.contains(e.target) || e.target.closest(".menu button")) d.open = false; });
   const toggle = e.target.closest("[data-menu]");
   if (toggle) {
     openMenu = openMenu === toggle.dataset.menu ? null : toggle.dataset.menu;
@@ -1491,9 +1859,9 @@ document.addEventListener("click", async (e) => {
     openMenu = null;
     if (current.name === "desk") setTimeout(() => views.desk.update(), 0);
   }
-  const t = e.target.closest("[data-run],[data-dry],[data-sched],[data-log],[data-stop],[data-day],[data-code],[data-reveal],[data-new],[data-folder],[data-start-oms],[data-cancel],[data-mode],[data-leg-add],[data-leg-remove],[data-close],[data-versions],[data-vrun],[data-vdry],[data-diff],[data-vsched],[data-vrestore],[data-vdelete],[data-template],[data-origin],[data-kind],[data-range],[data-delete],[data-restore],[data-href],[data-cloud-get],[data-cloud-mine]");
+  const t = e.target.closest("[data-run],[data-dry],[data-sched],[data-log],[data-stop],[data-day],[data-code],[data-reveal],[data-new],[data-folder],[data-start-oms],[data-cancel],[data-mode],[data-leg-add],[data-leg-remove],[data-close],[data-versions],[data-vrun],[data-vdry],[data-diff],[data-vsched],[data-vrestore],[data-vdelete],[data-template],[data-origin],[data-kind],[data-range],[data-delete],[data-restore],[data-href],[data-cloud-get],[data-cloud-mine],[data-files],[data-remove-local],[data-fpath],[data-fdir],[data-stab],[data-vsave],[data-edit],[data-open-folder]");
   if (!t) return;
-  if (t.dataset.href && !e.target.closest("a")) { location.hash = t.dataset.href; return; }
+  if (t.dataset.href) { if (!e.target.closest("a")) location.hash = t.dataset.href; return; }  // a link inside the row navigates itself
   if (t.dataset.log === "") return;
   if (t.dataset.range) {
     const [id, r] = t.dataset.range.split(":");
@@ -1504,21 +1872,32 @@ document.addEventListener("click", async (e) => {
   if (t.dataset.delete) return deleteFlow(t.dataset.delete);
   if (t.dataset.cloudGet || t.dataset.cloudMine) {
     const sid = t.dataset.cloudGet || t.dataset.cloudMine, mine = !!t.dataset.cloudMine, here = localIds().has(sid);
-    if (mine && !confirm(`Upload this laptop's copy of ${sid} over the cloud's?\n\nChanges made on the other laptop since this one last synced are replaced in the cloud.`)) return;
-    if (!mine && here && !confirm(`Replace this laptop's copy of ${sid} with the cloud's?\n\nChanges made here since the last backup are lost. Save them as a version first if you want to keep them.`)) return;
+    if (mine && !t.dataset.again && !confirm(`Replace the cloud copy of ${sid} with this laptop's?`)) return;
+    if (!mine && here && !confirm(`Replace this laptop's ${sid} with the cloud copy?\n\nUnsaved changes here will be lost.`)) return;
     t.disabled = true;
     const res = mine ? await api().cloud_keep_mine(sid) : await api().cloud_download(sid);
     t.disabled = false;
     if (!res.ok) return toast(res.error, true);
-    toast(mine ? `Uploaded this laptop's ${sid}` : here ? `${sid} updated from the cloud` : `${sid} downloaded. Turn on its schedule if you want it to run here`);
+    const st = scheduleText(res.schedule);
+    toast(mine ? (t.dataset.again ? `${sid} backed up again` : `Uploaded this laptop's ${sid}`) : here ? `${sid} updated from the cloud`
+      : st ? `Downloaded ${sid}. Scheduled: ${st}${res.loaded ? "" : " (schedule didn't load: open it and Save)"}`
+      : `Downloaded ${sid}`);
     await refresh(); refreshBooks(); return;
   }
   if (t.dataset.restore) {
     const res = await api().restore_strategy(t.dataset.restore);
     if (!res.ok) return toast(res.error, true);
-    toast(`${t.dataset.restore} restored`); await refresh(); refreshBooks(); return route();
+    toast(`${t.dataset.restore} is listed again`); await refresh(); refreshBooks(); return route();
   }
   if (t.dataset.close !== undefined) return closeOverlays();
+  if (t.dataset.vsave) return openSaveVersion(t.dataset.vsave);
+  if (t.dataset.edit) return openDetails(t.dataset.edit);
+  if (t.dataset.openFolder) return api().open_folder(t.dataset.openFolder);
+  if (t.dataset.stab) { stratTab = t.dataset.stab; return showStratTab(current.arg); }
+  if (t.dataset.files) { stratTab = "files"; location.hash = `#/strategy/${enc(t.dataset.files)}`; return; }
+  if (t.dataset.fpath) return showFile(t.dataset.fpath);
+  if (t.dataset.fdir) { fb.open.has(t.dataset.fdir) ? fb.open.delete(t.dataset.fdir) : fb.open.add(t.dataset.fdir); return renderTree(); }
+  if (t.dataset.removeLocal) return removeLocalFlow(t.dataset.removeLocal);
   if (t.dataset.versions) return openVersions(t.dataset.versions);
   if (t.dataset.code) { const r = await api().open_code(t.dataset.code); if (!r.ok) toast(r.error, true); return; }
   if (t.dataset.reveal) return api().reveal(t.dataset.reveal);
@@ -1545,7 +1924,7 @@ document.addEventListener("click", async (e) => {
   }
   if (t.dataset.vrestore) {
     const s = state.strategies.find((x) => x.strategy_id === versionsFor);
-    if (!confirm(`Replace the working code with ${t.dataset.vrestore}?\n\n${s.path}\n\nUnsaved changes in that file will be lost. Save them as a version first if you want to keep them.`)) return;
+    if (!confirm(`Replace the working code with ${t.dataset.vrestore}?\n\nUnsaved changes will be lost.`)) return;
     const res = await api().restore_version(versionsFor, t.dataset.vrestore);
     if (!res.ok) return toast(res.error, true);
     toast(`Working code restored to ${t.dataset.vrestore}`); refresh(); return renderVersions();
@@ -1562,7 +1941,7 @@ document.addEventListener("click", async (e) => {
   if (t.dataset.log) return openLog(t.dataset.log);
   if (t.dataset.folder !== undefined) return api().open_strategies_folder();
   if (t.dataset.startOms !== undefined) return toggleOms();
-  if (t.dataset.new !== undefined) return openNewStrat();
+  if (t.dataset.new !== undefined) return openNewStrat(t.dataset.new || null);
   if (t.dataset.mode) { ticket.mode = t.dataset.mode; return views.order.update(); }
   if (t.dataset.legAdd !== undefined) { ticket.legs = Math.min(4, ticket.legs + 1); return views.order.update(); }
   if (t.dataset.legRemove !== undefined) { ticket.legs = Math.max(2, ticket.legs - 1); return views.order.update(); }
@@ -1573,6 +1952,7 @@ document.addEventListener("click", async (e) => {
   }
   if (t.dataset.stop) { await api().stop_run(t.dataset.stop); toast("Stopping run…"); return refresh(); }
   const nb = t.dataset.run || t.dataset.dry, dry = !!t.dataset.dry;
+  if (!nb) return;
   t.disabled = true;
   const res = await api().run_strategy(nb, dry);
   if (!res.ok) toast(res.error, true);
@@ -1589,18 +1969,23 @@ $("log-reveal").onclick = () => api().reveal_output(openRunId);
 $("sched-time").oninput = updateEt;
 $("sched-save").onclick = async () => {
   const [h, m] = $("sched-time").value.split(":").map(Number);
-  const enabled = $("sched-enabled").checked;
-  if (enabled && !schedDays.size) return toast("Pick at least one day", true);
+  if (!schedDays.size) return toast("Pick at least one day, or Turn off", true);
   const pinned = await api().set_scheduled_version(schedNotebook, $("sched-version").value || null);
   if (!pinned.ok) return toast(pinned.error, true);
-  const res = await api().set_schedule(schedNotebook, h, m, [...schedDays], enabled);
+  const res = await api().set_schedule(schedNotebook, h, m, [...schedDays], true);
   if (!res.ok) return toast(res.error, true);
-  toast(enabled ? `Scheduled for ${fmtTime(h, m)}` : "Schedule turned off");
-  closeOverlays(); refresh();
+  toast(`Scheduled for ${fmtTime(h, m)}`);
+  closeOverlays(); await refresh(); if (current.name === "strategy" && stratTab === "settings") renderSettings(current.arg);
+};
+$("sched-off").onclick = async () => {
+  const [h, m] = $("sched-time").value.split(":").map(Number);
+  const res = await api().set_schedule(schedNotebook, h, m, [...schedDays], false);
+  if (!res.ok) return toast(res.error, true);
+  toast("Schedule turned off"); closeOverlays(); await refresh(); if (current.name === "strategy" && stratTab === "settings") renderSettings(current.arg);
 };
 // ---------- add-strategy dialog ----------
 let newStrat = { origin: "template", kind: "py", file: null };
-async function openNewStrat() {
+async function openNewStrat(preset) {
   newStrat = { origin: "template", kind: "py", file: null };
   $("ns-title").value = ""; $("ns-new-id").value = "";
   $("newstrat").classList.add("open"); $("scrim").classList.add("open");
@@ -1612,7 +1997,7 @@ async function openNewStrat() {
     (free.length ? `<optgroup label="Registered in the OMS">${free.map((c) => `<option value="${esc(c.id)}">${esc(c.id)} · ${money(c.cash_remaining)} of ${money(c.cash_budget)} left</option>`).join("")}</optgroup>` : "") +
     (taken.length ? `<optgroup label="Already on this laptop">${taken.map((c) => `<option value="${esc(c.id)}" disabled>${esc(c.id)}</option>`).join("")}</optgroup>` : "") +
     `<option value="__new">＋ Register a new strategy in the OMS…</option>`;
-  sel.value = free.length ? free[0].id : "__new";
+  sel.value = preset && free.some((c) => c.id === preset) ? preset : free.length ? free[0].id : "__new";
   renderNewStrat();
 }
 function renderNewStrat() {
@@ -1624,9 +2009,9 @@ function renderNewStrat() {
   $("ns-register").style.display = $("ns-id").value === "__new" ? "" : "none";
   $("ns-create").textContent = newStrat.origin === "link" ? "Link strategy" : newStrat.origin === "upload" ? "Upload strategy" : "Create from template";
   $("ns-hint").innerHTML = {
-    template: "Creates a file in <code>strategies/&lt;id&gt;/</code> with the 3 lines below already written. You only fill in <code>target</code>.",
-    link: "Your file stays where it is. Every run reads the latest save, and it runs from that file's folder, so paths like <code>models/</code> work.",
-    upload: "Copies your file into <code>strategies/&lt;id&gt;/</code>. Edit that copy from now on; your original isn't touched.",
+    template: "Creates a file with the 3 lines below. You fill in <code>target</code>.",
+    link: "Each run reads your latest save, from that file's folder.",
+    upload: "Your original isn't touched; edit the copy from now on.",
   }[newStrat.origin];
 }
 $("ns-id").onchange = renderNewStrat;
@@ -1652,7 +2037,14 @@ function notebookAsText(json) {
     return JSON.parse(json).cells.map((c) => (c.cell_type === "markdown" ? "# [markdown]\n# " + [].concat(c.source).join("").replaceAll("\n", "\n# ") : [].concat(c.source).join(""))).join("\n\n# ─────────\n");
   } catch { return json; }
 }
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeOverlays(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeOverlays();
+  if (e.key === "Enter" && $("vsave").classList.contains("open")) { e.preventDefault(); saveVersionNow(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === "s" && current.name === "strategy" && localFor(current.arg)) { e.preventDefault(); openSaveVersion(current.arg); }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "r") { e.preventDefault(); hardRefresh(); }
+});
+$("vs-save").onclick = saveVersionNow;
+$("det-save").onclick = saveDetails;
 window.addEventListener("hashchange", route);
 
 window.addEventListener("pywebviewready", async () => {
