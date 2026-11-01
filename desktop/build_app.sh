@@ -27,6 +27,10 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cat > "$APP/Contents/MacOS/SimpliEarnDesk" <<EOF
 #!/bin/bash
 cd "$DESKTOP"
+# Finder can start this script under Rosetta, which loads the venv's arm64 wheels as x86_64 and fails.
+if [ "\$(sysctl -in hw.optional.arm64)" = "1" ]; then
+  exec arch -arm64 "$PYTHON" app.py >> "$DESKTOP/data/logs/app.log" 2>&1
+fi
 exec "$PYTHON" app.py >> "$DESKTOP/data/logs/app.log" 2>&1
 EOF
 chmod +x "$APP/Contents/MacOS/SimpliEarnDesk"
