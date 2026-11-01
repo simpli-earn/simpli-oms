@@ -9,3 +9,11 @@ dist/
 .DS_Store
 .logs/
 desktop/data/
+
+# Strategy folders are personal and backed up to the cloud by SimpliEarn Desk, not shipped with
+# the OMS. Only the shared client, templates, and docs in strategies/ are tracked.
+strategies/*
+!strategies/oms_client.py
+!strategies/templates/
+!strategies/README.md
+!strategies/requirements.txt

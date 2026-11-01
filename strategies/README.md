@@ -53,7 +53,8 @@ python3 -m venv .venv
 
 `../desktop/build_app.sh` also adds a `.pth` file so `import oms_client` works from any folder.
 
-## zscore-spy
+## Not in git
 
-The pooled Z-score top 20 from `ai-stock-insights`, rebalanced daily. Run it between 3:30 and 3:55 PM ET; with the market closed it only prints the plan. `zscore-spy/models/` holds the frozen model; rebuild it with `../../ai-stock-insights/.venv/bin/python train_zscore_pooled.py`. xgboost needs OpenMP on macOS: `brew install libomp`, or on this machine, point xgboost at scikit-learn's bundled copy:
-`install_name_tool -add_rpath @loader_path/../../sklearn/.dylibs .venv/lib/python3.13/site-packages/xgboost/lib/libxgboost.dylib && codesign --force -s - <same path>`
+Strategy folders are personal, so git ignores everything in `strategies/` except `oms_client.py`, `templates/`, this README, and `requirements.txt`. SimpliEarn Desk backs up each strategy's scheduled version to the shared OMS database instead (see **Cloud backup** in the app's Strategy guide), and any laptop can download it from **In the cloud** on My strategies.
+
+xgboost-based strategies need OpenMP on macOS: `brew install libomp` (`install.command` handles this).
