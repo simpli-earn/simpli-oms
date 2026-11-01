@@ -614,7 +614,7 @@ function cloudRow(s) {
     : '<span class="faint">Checking…</span>';
   if (!c) return '<span class="faint">Checking…</span>';
   const skipped = c.skipped?.length ? ` <span class="warnc" title="${esc(c.skipped.join(", "))}">· ${c.skipped.length} file(s) over 10 MB not backed up</span>` : "";
-  if (c.state === "synced") return `<span class="up">✓ Backed up</span> <span class="muted">· rev ${c.revision}</span>${skipped}`;
+  if (c.state === "synced") return `<span class="up">✓ Backed up</span>${s.scheduled_version ? ` <span class="chip">${esc(s.scheduled_version)}</span>` : ""}${skipped}`;
   if (c.state === "update") return `<span class="warnc">Newer copy in the cloud${by(c)}</span><button class="btn sm" data-cloud-get="${sid}">Update</button>`;
   if (c.state === "conflict") return `<span class="warnc">Changed here and in the cloud${by(c)}</span>
     <button class="btn sm" data-cloud-mine="${sid}" title="Upload this laptop's copy over the cloud's">Keep mine</button>
