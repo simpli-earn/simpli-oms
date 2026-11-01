@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, LargeBinary, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -130,3 +130,30 @@ class LedgerEntry(Base):
     qty_delta: Mapped[Decimal] = mapped_column(AMOUNT, default=Decimal("0"))
     price: Mapped[Decimal | None] = mapped_column(AMOUNT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class StrategyCode(Base):
+    """The cloud copy of a strategy's folder. revision goes up by one on every upload, so a
+    laptop that uploads from an older revision is told someone else changed it first."""
+
+    __tablename__ = "strategy_code"
+
+    strategy_id: Mapped[str] = mapped_column(ForeignKey("strategies.id"), primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+    schedule: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    updated_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class StrategyFile(Base):
+    """The latest copy of one file of a strategy's folder (code, strategy.json, versions/, models/)."""
+
+    __tablename__ = "strategy_files"
+
+    strategy_id: Mapped[str] = mapped_column(ForeignKey("strategies.id"), primary_key=True)
+    path: Mapped[str] = mapped_column(String(512), primary_key=True)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    sha256: Mapped[str] = mapped_column(String(64))
+    size: Mapped[int] = mapped_column(Integer)
+    revision: Mapped[int] = mapped_column(Integer)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

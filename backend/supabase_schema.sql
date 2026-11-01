@@ -160,12 +160,33 @@ where not exists (
     where e.strategy_id = p.strategy_id and e.symbol = p.symbol
 );
 
+create table if not exists public.strategy_code (
+    strategy_id varchar(64) primary key references public.strategies(id),
+    revision integer not null default 0,
+    schedule jsonb,
+    updated_by varchar(128),
+    updated_at timestamptz not null default now()
+);
+
+create table if not exists public.strategy_files (
+    strategy_id varchar(64) not null references public.strategies(id),
+    path varchar(512) not null,
+    content bytea not null,
+    sha256 varchar(64) not null,
+    size integer not null,
+    revision integer not null,
+    updated_at timestamptz not null default now(),
+    primary key (strategy_id, path)
+);
+
 alter table public.strategies enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_legs enable row level security;
 alter table public.fills enable row level security;
 alter table public.strategy_positions enable row level security;
 alter table public.ledger_entries enable row level security;
+alter table public.strategy_code enable row level security;
+alter table public.strategy_files enable row level security;
 
 revoke all on table public.strategies from public, anon, authenticated, service_role;
 revoke all on table public.orders from public, anon, authenticated, service_role;
@@ -173,6 +194,8 @@ revoke all on table public.order_legs from public, anon, authenticated, service_
 revoke all on table public.fills from public, anon, authenticated, service_role;
 revoke all on table public.strategy_positions from public, anon, authenticated, service_role;
 revoke all on table public.ledger_entries from public, anon, authenticated, service_role;
+revoke all on table public.strategy_code from public, anon, authenticated, service_role;
+revoke all on table public.strategy_files from public, anon, authenticated, service_role;
 
 do $$
 declare
@@ -185,7 +208,8 @@ begin
     execute 'grant usage on schema public to oms_app';
     execute 'grant connect on database postgres to oms_app';
     foreach tbl in array array[
-        'strategies', 'orders', 'order_legs', 'fills', 'strategy_positions', 'ledger_entries'
+        'strategies', 'orders', 'order_legs', 'fills', 'strategy_positions', 'ledger_entries',
+        'strategy_code', 'strategy_files'
     ]
     loop
         execute format('grant select, insert, update on table public.%I to oms_app', tbl);
@@ -195,6 +219,8 @@ begin
             tbl
         );
     end loop;
+    -- Only the latest copy of each strategy file is kept, so removed files are deleted.
+    execute 'grant delete on table public.strategy_files to oms_app';
     for seq in
         select pg_get_serial_sequence(format('public.%s', name), 'id')
         from (values ('order_legs'), ('fills'), ('strategy_positions'), ('ledger_entries')) as tables(name)

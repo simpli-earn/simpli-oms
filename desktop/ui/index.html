@@ -436,7 +436,7 @@ const $ = (id) => document.getElementById(id);
 const api = () => window.pywebview.api;
 const DAYS = [[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"],[7,"Sun"]];
 const TERMINAL = ["filled", "canceled", "expired", "rejected", "replaced"];
-let state = { oms: {}, strategies: [], runs: [], books: {}, stats: {} };
+let state = { oms: {}, strategies: [], runs: [], books: {}, stats: {}, cloud: { strategies: {}, available: [] } };
 let openRunId = null, schedNotebook = null, schedDays = new Set();
 let openMenu = null; // "info:<id>" or "open:<id>": card menus survive the 2-second re-render
 const ORIGIN = { template_py: "from template", template_ipynb: "from template", upload: "uploaded copy", link: "linked file" };
@@ -565,6 +565,7 @@ views.desk = {
     return head("My strategies", "Strategies on this laptop, each in its own folder in <span class=\"mono\">simpli-oms/strategies</span>. New to this? Read the <a href=\"#/guide\">Strategy guide</a>.",
       `<div class="actions"><button class="btn ghost" data-folder>Open folder</button><button class="btn primary" data-new>Add strategy</button></div>`) +
       `<div class="grid" id="cards"><div class="card empty">Loading…</div></div>
+       <div id="cloud-list"></div>
        <div class="section-head"><h2>Run history</h2><span class="faint">Times in ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone.replace("_", " "))}</span></div>
        <div class="panel"><table><thead><tr><th>Started</th><th>Strategy</th><th>Version</th><th>Trigger</th><th>Status</th><th>Result</th><th>Took</th></tr></thead><tbody id="runs"></tbody></table></div>`;
   },
@@ -574,6 +575,15 @@ views.desk = {
     if (!state.strategies.length) {
       el.innerHTML = `<div class="card empty">No strategies yet. Click <b>Add strategy</b> to start from a template, link a file, or upload one.</div>`;
     } else el.innerHTML = state.strategies.map(card).join("");
+    const avail = state.cloud.available || [];
+    $("cloud-list").innerHTML = avail.length ? `
+      <div class="section-head"><h2>In the cloud</h2><span class="faint">Backed up from any laptop, not set up on this one</span></div>
+      <div class="panel"><table><thead><tr><th>Strategy</th><th>Files</th><th>Last upload</th><th></th></tr></thead><tbody>${avail.map((c) => `
+        <tr><td><span class="chip">${esc(c.strategy_id)}</span></td>
+          <td class="num muted">${c.files} · ${(c.size / 1024).toFixed(0)} KB</td>
+          <td class="muted" data-sort="${c.updated_at}">${ago(c.updated_at)}${c.updated_by ? " · " + esc(c.updated_by.replace(/\.local$/, "")) : ""}</td>
+          <td style="text-align:right"><button class="btn sm primary" data-cloud-get="${esc(c.strategy_id)}">Download</button></td></tr>`).join("")}
+      </tbody></table></div>` : "";
     $("runs").innerHTML = state.runs.length ? state.runs.map((r) => `
       <tr class="link" data-log="${r.id}">
         <td class="num" data-sort="${r.started_at}">${ago(r.started_at)}</td>
@@ -594,6 +604,23 @@ function versionLine(s) {
   }
   const last = s.versions[s.versions.length - 1];
   return `<span class="vstate mod">Unsaved changes since ${esc(last.label)}</span>`;
+}
+function cloudRow(s) {
+  const c = state.cloud.strategies?.[s.strategy_id], sid = esc(s.strategy_id);
+  const by = (c) => c.updated_by ? ` from ${esc(c.updated_by.replace(/\.local$/, ""))}` : "";
+  if (!state.oms.backend) return '<span class="faint">Start the OMS to back up</span>';
+  if (!state.cloud.online) return state.cloud.error
+    ? `<span class="down">Backup off</span> <span class="muted" style="flex-basis:100%;font-size:12.5px">${esc(state.cloud.error)}</span>`
+    : '<span class="faint">Checking…</span>';
+  if (!c) return '<span class="faint">Checking…</span>';
+  const skipped = c.skipped?.length ? ` <span class="warnc" title="${esc(c.skipped.join(", "))}">· ${c.skipped.length} file(s) over 10 MB not backed up</span>` : "";
+  if (c.state === "synced") return `<span class="up">✓ Backed up</span> <span class="muted">· rev ${c.revision}</span>${skipped}`;
+  if (c.state === "update") return `<span class="warnc">Newer copy in the cloud${by(c)}</span><button class="btn sm" data-cloud-get="${sid}">Update</button>`;
+  if (c.state === "conflict") return `<span class="warnc">Changed here and in the cloud${by(c)}</span>
+    <button class="btn sm" data-cloud-mine="${sid}" title="Upload this laptop's copy over the cloud's">Keep mine</button>
+    <button class="btn sm" data-cloud-get="${sid}" title="Replace this laptop's copy with the cloud's">Use cloud's</button>`;
+  if (c.state === "unregistered") return '<span class="faint">Not backed up: register it in the OMS first</span>';
+  return `<span class="down" title="${esc(c.error || "")}">Backup failed</span>`;
 }
 function card(s) {
   const b = state.books[s.strategy_id] || {};
@@ -647,6 +674,7 @@ function card(s) {
     <dl class="facts">
       <dt>Version</dt><dd>${versionLine(s)}</dd>
       <dt>Schedule</dt><dd>${schedRow}</dd>
+      <dt>Cloud</dt><dd>${cloudRow(s)}</dd>
       <dt>Last run</dt><dd>${r
         ? `<button class="linkish" data-log="${r.id}" title="Open the log">${badge(r.status)}<span class="muted">${ago(r.started_at)}${r.dry_run ? " · test run" : ""}${r.version ? " · " + esc(r.version) : ""}</span></button>
            <div class="muted" style="flex-basis:100%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.summary || "")}</div>`
@@ -916,6 +944,9 @@ oms.rebalance(target, latest_prices(set(target) | set(oms.holdings())))</pre>
   <li><b>From template</b> or <b>Upload a copy</b>: the file sits in <code>strategies/&lt;id&gt;/</code>. Open it with the card's <i>Open in editor / Jupyter</i>.</li>
   <li><b>Link a file</b>: the file stays where it is (any folder or repo on this laptop). Every run reads it fresh, so saving in your editor is all it takes. The app only stores a manifest and versions in <code>strategies/&lt;id&gt;/</code>.</li>
 </ul>
+
+<h2>Cloud backup</h2>
+<p>While the app is open and the OMS is running, every strategy on this laptop is uploaded to the shared OMS database: its <code>strategy.json</code>, code, <code>versions/</code>, <code>models/</code>, and the schedule's time and days. Each card's <b>Cloud</b> row shows whether it's backed up. <code>runs/</code>, run history, and files over 10 MB stay on this laptop. Everyone on the team can download every strategy. Strategies that are in the cloud but not on this laptop are listed under <b>In the cloud</b> on My strategies, so after a reinstall you click <b>Download</b> and turn its schedule back on. If someone else changes a strategy, its card offers <b>Update</b>. If it changed on both laptops, choose <b>Keep mine</b> or <b>Use cloud's</b>.</p>
 
 <h2>Versions</h2>
 <p>Nothing is tracked automatically. When the code is in a state you want to keep, open <b>Versions</b> and <b>Save current code</b> with a label (<code>v1</code>, <code>2.0</code>…) and a name. The app copies the file into <code>strategies/&lt;id&gt;/versions/</code>. From there you can compare it with the working code, run it, restore it, or pin it so scheduled runs use that exact code while you keep editing. Every run in the history shows the version it ran (<i>working</i> = unsaved changes). For notebooks only code cells count, so running a notebook doesn't make it look modified.</p>
@@ -1302,10 +1333,10 @@ function remember(name, arg) {
 
 // ---------- polling the local side ----------
 async function refresh() {
-  const [o, strategies, runs] = await Promise.all([api().oms_status(), api().strategies(), api().runs(60)]);
+  const [o, strategies, runs, cloudState] = await Promise.all([api().oms_status(), api().strategies(), api().runs(60), api().cloud_status()]);
   const finished = state.runs.some((old) => (old.status === "running" || old.status === "queued") && runs.find((n) => n.id === old.id && n.status !== old.status));
   const omsChanged = o.backend !== state.oms.backend;
-  Object.assign(state, { oms: o, strategies, runs });
+  Object.assign(state, { oms: o, strategies, runs, cloud: cloudState });
   renderOms();
   $("nav-local").textContent = strategies.length || "";
   if (current.name === "desk") views.desk.update();
@@ -1458,7 +1489,7 @@ document.addEventListener("click", async (e) => {
     openMenu = null;
     if (current.name === "desk") setTimeout(() => views.desk.update(), 0);
   }
-  const t = e.target.closest("[data-run],[data-dry],[data-sched],[data-log],[data-stop],[data-day],[data-code],[data-reveal],[data-new],[data-folder],[data-start-oms],[data-cancel],[data-mode],[data-leg-add],[data-leg-remove],[data-close],[data-versions],[data-vrun],[data-vdry],[data-diff],[data-vsched],[data-vrestore],[data-vdelete],[data-template],[data-origin],[data-kind],[data-range],[data-delete],[data-restore],[data-href]");
+  const t = e.target.closest("[data-run],[data-dry],[data-sched],[data-log],[data-stop],[data-day],[data-code],[data-reveal],[data-new],[data-folder],[data-start-oms],[data-cancel],[data-mode],[data-leg-add],[data-leg-remove],[data-close],[data-versions],[data-vrun],[data-vdry],[data-diff],[data-vsched],[data-vrestore],[data-vdelete],[data-template],[data-origin],[data-kind],[data-range],[data-delete],[data-restore],[data-href],[data-cloud-get],[data-cloud-mine]");
   if (!t) return;
   if (t.dataset.href && !e.target.closest("a")) { location.hash = t.dataset.href; return; }
   if (t.dataset.log === "") return;
@@ -1469,6 +1500,17 @@ document.addEventListener("click", async (e) => {
     return loadChart(id, chartState[id].fetcher);
   }
   if (t.dataset.delete) return deleteFlow(t.dataset.delete);
+  if (t.dataset.cloudGet || t.dataset.cloudMine) {
+    const sid = t.dataset.cloudGet || t.dataset.cloudMine, mine = !!t.dataset.cloudMine, here = localIds().has(sid);
+    if (mine && !confirm(`Upload this laptop's copy of ${sid} over the cloud's?\n\nChanges made on the other laptop since this one last synced are replaced in the cloud.`)) return;
+    if (!mine && here && !confirm(`Replace this laptop's copy of ${sid} with the cloud's?\n\nChanges made here since the last backup are lost. Save them as a version first if you want to keep them.`)) return;
+    t.disabled = true;
+    const res = mine ? await api().cloud_keep_mine(sid) : await api().cloud_download(sid);
+    t.disabled = false;
+    if (!res.ok) return toast(res.error, true);
+    toast(mine ? `Uploaded this laptop's ${sid}` : here ? `${sid} updated from the cloud` : `${sid} downloaded. Turn on its schedule if you want it to run here`);
+    await refresh(); refreshBooks(); return;
+  }
   if (t.dataset.restore) {
     const res = await api().restore_strategy(t.dataset.restore);
     if (!res.ok) return toast(res.error, true);

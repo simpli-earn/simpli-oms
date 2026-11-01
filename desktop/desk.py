@@ -378,6 +378,13 @@ create table if not exists strategy_schedules (
     weekdays text not null,
     enabled integer not null
 );
+create table if not exists cloud_sync (   -- the cloud revision this laptop last matched (cloud.py)
+    strategy text primary key,
+    revision integer not null,
+    files text not null,          -- JSON {path: sha256} of what was uploaded or downloaded
+    schedule text,
+    synced_at text not null
+);
 """
 EXTRA_COLUMNS = {"version": "text", "code_hash": "text"}
 

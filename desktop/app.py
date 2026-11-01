@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 import requests
 import webview
 
+import cloud
 import desk
 import history
 import scheduler
@@ -58,6 +59,9 @@ class Api:
         self._snaps: dict[str, tuple[float, dict]] = {}
         self._books: dict[str, tuple[float, dict | None]] = {}
         self._hist: dict[tuple, tuple[float, dict]] = {}
+        self._cloud: dict = {"online": False, "strategies": {}, "available": []}
+        self._cloud_lock = threading.Lock()
+        self._cloud_wake = threading.Event()
         self.window = None
 
     # OMS servers
@@ -255,6 +259,7 @@ class Api:
             s = desk.create_strategy(sid, origin, title, file)
         except ValueError as exc:
             return {"ok": False, "error": str(exc)}
+        self._cloud_wake.set()
         self.open_code(sid)
         return {"ok": True, "strategy": s}
 
@@ -391,13 +396,16 @@ class Api:
 
     def save_version(self, sid: str, label: str, name: str, note: str = "") -> dict:
         try:
-            return {"ok": True, "version": desk.save_version(sid, label, name, note)}
+            v = desk.save_version(sid, label, name, note)
+            self._cloud_wake.set()
+            return {"ok": True, "version": v}
         except ValueError as exc:
             return {"ok": False, "error": str(exc)}
 
     def delete_version(self, sid: str, label: str) -> dict:
         try:
             desk.delete_version(sid, label)
+            self._cloud_wake.set()
             return {"ok": True}
         except ValueError as exc:
             return {"ok": False, "error": str(exc)}
@@ -405,6 +413,7 @@ class Api:
     def restore_version(self, sid: str, label: str) -> dict:
         try:
             desk.restore_version(sid, label)
+            self._cloud_wake.set()
             return {"ok": True}
         except (ValueError, OSError) as exc:
             return {"ok": False, "error": str(exc)}
@@ -412,6 +421,7 @@ class Api:
     def set_scheduled_version(self, sid: str, label: str | None) -> dict:
         try:
             desk.set_scheduled_version(sid, label)
+            self._cloud_wake.set()
             return {"ok": True}
         except ValueError as exc:
             return {"ok": False, "error": str(exc)}
@@ -471,7 +481,50 @@ class Api:
             scheduler.apply(sid, int(hour), int(minute), [int(d) for d in weekdays], bool(enabled))
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
+        self._cloud_wake.set()
         return {"ok": True, "schedule": desk.get_schedule(sid), "loaded": scheduler.loaded(sid)}
+
+    # cloud copies (cloud.py)
+
+    def _cloud_loop(self) -> None:
+        """Upload changes every 30 seconds while the OMS is up, sooner after a change in the app."""
+        while True:
+            self.cloud_sync()
+            self._cloud_wake.wait(30)
+            self._cloud_wake.clear()
+
+    def cloud_sync(self) -> dict:
+        if not _up(f"{BACKEND_URL}/openapi.json"):
+            self._cloud = {"online": False, "strategies": {}, "available": []}
+            return self._cloud
+        with self._cloud_lock:
+            try:
+                self._cloud = cloud.sync_all()
+            except Exception as exc:
+                self._cloud = {"online": False, "error": str(exc), "strategies": {}, "available": []}
+        return self._cloud
+
+    def cloud_status(self) -> dict:
+        return self._cloud
+
+    def cloud_download(self, sid: str) -> dict:
+        """Set up a strategy from its cloud copy, or replace this laptop's copy with it."""
+        with self._cloud_lock:
+            try:
+                cloud.download(sid)
+            except Exception as exc:
+                return {"ok": False, "error": str(exc)}
+        self.cloud_sync()
+        return {"ok": True}
+
+    def cloud_keep_mine(self, sid: str) -> dict:
+        with self._cloud_lock:
+            try:
+                cloud.keep_mine(sid)
+            except Exception as exc:
+                return {"ok": False, "error": str(exc)}
+        self.cloud_sync()
+        return {"ok": True}
 
     # OMS data for the Account / Strategies / New order tabs
 
@@ -576,6 +629,7 @@ def _brand_process() -> None:
 
 def main() -> None:
     api = Api()
+    threading.Thread(target=api._cloud_loop, daemon=True).start()
     _brand_process()
     api.window = webview.create_window(
         "SimpliEarn Desk",

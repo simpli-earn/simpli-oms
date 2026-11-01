@@ -249,3 +249,46 @@ class SymbolDetailOut(BaseModel):
     account_position: AccountPositionOut | None
     account_error: str | None = None
     strategies: list[StrategyTrades]
+
+
+class CodeFileIn(BaseModel):
+    path: str = Field(min_length=1, max_length=512)
+    content_b64: str
+
+
+class CodeUploadIn(BaseModel):
+    """base_revision is the cloud revision this laptop last downloaded or uploaded (0 for a
+    first upload). force skips that check and overwrites whatever is in the cloud."""
+
+    base_revision: int = Field(ge=0)
+    files: list[CodeFileIn] = Field(default_factory=list)
+    deleted: list[str] = Field(default_factory=list)
+    schedule: dict | None = None
+    updated_by: str | None = Field(default=None, max_length=128)
+    force: bool = False
+
+
+class CodeFileOut(BaseModel):
+    path: str
+    sha256: str
+    size: int
+    updated_at: datetime
+    content_b64: str | None = None
+
+
+class CodeOut(BaseModel):
+    strategy_id: str
+    revision: int
+    schedule: dict | None
+    updated_by: str | None
+    updated_at: datetime
+    files: list[CodeFileOut]
+
+
+class CodeSummaryOut(BaseModel):
+    strategy_id: str
+    revision: int
+    updated_by: str | None
+    updated_at: datetime
+    files: int
+    size: int

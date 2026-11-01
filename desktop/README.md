@@ -10,6 +10,7 @@ A Mac app for running the strategy notebooks in `../strategies` against the OMS.
 - **Account**, **Strategies**, and **New order** match the web dashboard's pages, plus today's and total % change for every strategy and position. Open orders on a strategy page have a Cancel button.
 - **Run now** executes the notebook for real. **Dry run** prints the orders without sending them. Click a running card or any history row for the live log.
 - **Schedule** runs a notebook automatically at a set time on chosen days. Schedules are macOS LaunchAgents, so they fire even when the app is closed. If the laptop is asleep at that time, the run happens once on wake. If it is shut down, that day is missed.
+- **Cloud backup** uploads every strategy on this laptop (code, `strategy.json`, `versions/`, `models/`, and the schedule's time and days) to the shared OMS database while the app is open and the OMS is running. Anyone on the team can download any strategy from **In the cloud** on My strategies, so deleting the app or the folder doesn't lose code. A card offers **Update** when another laptop changed the strategy, and **Keep mine** / **Use cloud's** when both did. `runs/`, run history, and files over 10 MB stay local. Needs the tables in `backend/add_strategy_code.sql` (run once by a Supabase project owner).
 - **Run history** records every run, whether manual or scheduled, with status, a result summary, and how long it took. The executed notebook is saved to `strategies/runs/` and its text output to `data/logs/`.
 
 A new strategy only needs a notebook in `strategies/` with a `STRATEGY_ID = "..."` line. It appears in the app automatically.
@@ -36,6 +37,7 @@ This builds `~/Applications/SimpliEarn Desk.app`, using `strategies/.venv` (see 
 
 - `app.py`: the window and the calls behind its buttons
 - `runner.py`: runs one notebook and records the result. Both the app and launchd call it.
+- `cloud.py`: uploads, downloads, and tracks the cloud copy of each strategy
 - `scheduler.py`: writes and loads the LaunchAgents (`~/Library/LaunchAgents/com.simpliearn.desk.*.plist`)
 - `desk.py`: paths, run history (`data/desk.db`), and strategy discovery
 - `ui/index.html`: the interface
