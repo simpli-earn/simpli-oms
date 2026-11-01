@@ -6,7 +6,16 @@
     "file": "zscore_spy.ipynb"
   },
   "origin": "template_ipynb",
-  "scheduled_version": null,
-  "versions": [],
+  "scheduled_version": "v1",
+  "versions": [
+    {
+      "label": "v1",
+      "name": "Init",
+      "note": "trained 1998-2020",
+      "file": "versions/v1.ipynb",
+      "hash": "f785a57cd87f",
+      "created_at": "2026-11-01T19:18:06+00:00"
+    }
+  ],
   "created_at": "2026-10-26T19:40:00+00:00"
 }
