@@ -11,6 +11,16 @@ Signals and trade ideas stay outside. Every order names a strategy id that was r
 3. Generate a paper API key and secret. These are separate from live keys. Do not put live keys in this project.
 4. Paper accounts already have options Level 3, including multi-leg orders. No extra approval is required for paper.
 
+## Quick install (Mac)
+
+```bash
+git clone -b desktop-oms https://github.com/simpli-earn/simpli-oms.git
+```
+
+Then double-click `install.command` in the `simpli-oms` folder, or run `./install.command`. When it asks, drag in the shared env file. The installer checks Python and Node (it offers to install them with Homebrew if they are missing), sets up the backend, the dashboard, and the strategies environment, builds `~/Applications/SimpliEarn Desk.app`, and opens it. Click **Start OMS** in the app. Running it again is safe.
+
+If macOS blocks the double-click ("cannot be opened"), right-click `install.command` → **Open** once.
+
 ## Run it
 
 Python 3.11 or newer, and Node.js 18 or newer:

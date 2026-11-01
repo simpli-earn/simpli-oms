@@ -19,7 +19,7 @@ SITE="$("$PYTHON" -c 'import site; print(site.getsitepackages()[0])')"
 
 # Finder and launchd start apps with a bare PATH, so remember where node lives (nvm installs it per user).
 NODE_BIN="$(dirname "$(command -v node || true)")"
-mkdir -p "$DESKTOP/data"
+mkdir -p "$DESKTOP/data/logs"
 printf '{"node_bin": "%s"}\n' "$NODE_BIN" > "$DESKTOP/data/config.json"
 
 rm -rf "$APP"
