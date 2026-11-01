@@ -12,5 +12,10 @@ class Settings(BaseSettings):
     apca_api_key_id: str = ""
     apca_api_secret_key: str = ""
     apca_api_base_url: str = "https://paper-api.alpaca.markets"
+    kalshi_demo_api_key_id: str = ""
+    kalshi_demo_private_key_path: str = ""
+    kalshi_demo_private_key: str = ""
+    kalshi_scan_delay_seconds: float = 0.15
+    paper_sync_interval_seconds: float = 10
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

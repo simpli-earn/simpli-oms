@@ -18,6 +18,7 @@ export function Shell() {
           </NavLink>
           <NavLink to="/strategies">Strategies</NavLink>
           <NavLink to="/order">New order</NavLink>
+          <NavLink to="/predictions">Predictions</NavLink>
         </nav>
         <div className="rail-foot">
           <a href="/docs" target="_blank" rel="noreferrer">

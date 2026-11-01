@@ -10,14 +10,20 @@ from sqlalchemy import text
 from app.config import Settings
 from app.database import make_engine, make_session_factory
 from app.models import Base
-from app.routers import code, orders, portfolio, strategies
+from app.routers import code, orders, portfolio, predictions, strategies
 from app.services.broker import AlpacaBroker, Broker
+from app.services.paper import Paper
+from app.services.predictions import Predictions
 from app.services.sync import sync_once
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Settings | None = None, broker: Broker | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    broker: Broker | None = None,
+    predictions_client: Predictions | None = None,
+) -> FastAPI:
     settings = settings or Settings()
     if broker is None:
         broker = AlpacaBroker(settings)
@@ -33,11 +39,11 @@ def create_app(settings: Settings | None = None, broker: Broker | None = None) -
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        task = None
+        tasks = []
         if app.state.settings.oms_sync_enabled:
-            task = asyncio.create_task(_sync_loop(app))
+            tasks = [asyncio.create_task(_sync_loop(app)), asyncio.create_task(_paper_loop(app))]
         yield
-        if task is not None:
+        for task in tasks:
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await task
@@ -56,6 +62,8 @@ def create_app(settings: Settings | None = None, broker: Broker | None = None) -
     app.state.settings = settings
     app.state.broker = broker
     app.state.session_factory = session_factory
+    app.state.predictions = predictions_client or Predictions(settings)
+    app.state.paper = Paper(app.state.predictions)
     origins = [item.strip() for item in settings.oms_cors_origins.split(",") if item.strip()]
     app.add_middleware(
         CORSMiddleware,
@@ -68,6 +76,7 @@ def create_app(settings: Settings | None = None, broker: Broker | None = None) -
     app.include_router(orders.router)
     app.include_router(portfolio.router)
     app.include_router(code.router)
+    app.include_router(predictions.router)
 
     @app.get("/api/health", tags=["system"])
     def health():
@@ -96,6 +105,16 @@ async def _sync_loop(app: FastAPI) -> None:
             await asyncio.to_thread(sync_once, app.state.session_factory, app.state.broker)
         except Exception:
             logger.exception("order sync failed")
+        await asyncio.sleep(interval)
+
+
+async def _paper_loop(app: FastAPI) -> None:
+    interval = app.state.settings.paper_sync_interval_seconds
+    while True:
+        try:
+            await asyncio.to_thread(app.state.paper.sync_once, app.state.session_factory)
+        except Exception:
+            logger.exception("paper sync failed")
         await asyncio.sleep(interval)
 
 

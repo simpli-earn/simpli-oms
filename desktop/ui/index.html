@@ -166,6 +166,20 @@
   .segmented button.on { background: var(--brand); color: var(--brand-ink); font-weight: 600; }
   .legs { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
   .leg { display: grid; grid-template-columns: 2fr 1fr 1.4fr; gap: 12px; }
+  .pm-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pm-bar .segmented { margin-bottom: 0; }
+  .pm-bar input { height: 34px; width: 280px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--fg); font-size: 14px; user-select: text; }
+  .pm-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  .pm-grid.detail { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .pm-grid tr[data-pm] { cursor: pointer; }
+  .pm-grid tr.sel { background: #1a2820; }
+  .pm-sub { font-size: 12px; margin-top: 2px; }
+  .pm-detail { position: sticky; top: 0; }
+  .pm-rules { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin: 12px 18px; }
+  #pm-ticket form { padding: 16px 18px; border-top: 1px solid var(--border); }
+  #pm-ticket .fields { grid-template-columns: 1fr 1fr; }
+  .pm-fund { display: flex; gap: 12px; align-items: end; padding: 14px 18px; border-top: 1px solid var(--border); }
+  .pm-sub-head { padding: 16px 18px 8px; font-size: 13px; font-weight: 600; border-top: 1px solid var(--border); }
   .ticket-foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
 
   .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; z-index: 20; }
@@ -259,6 +273,17 @@
   .vstate.mod { color: var(--warn); }
 
   .drawer.wide { width: min(820px, 94vw); }
+  .bt-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+  .bt-form .wide { grid-column: span 3; display: flex; gap: 12px; align-items: center; }
+  .bt-form label.f input[type=date] { color-scheme: dark; }
+  .bt-run { padding: 14px 22px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 13px; display: flex; gap: 12px; align-items: center; }
+  .bt-card { padding: 16px 22px; border-bottom: 1px solid var(--border); }
+  .bt-card h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; gap: 10px; }
+  .bt-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 12px 0; }
+  .bt-stats span { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .bt-stats strong { font-weight: 400; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .bt-spark { width: 100%; height: 56px; display: block; }
+  .bt-mk { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
   .drawer .scroll { overflow-y: auto; flex: 1; padding: 18px 22px 30px; user-select: text; }
   .vform { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: end; }
   .vform .full { grid-column: 1 / -1; }
@@ -333,6 +358,7 @@
       <a data-nav="account" href="#/account">Account</a>
       <a data-nav="strategies" href="#/strategies">Strategies</a>
       <a data-nav="order" href="#/order">New order</a>
+      <a data-nav="predictions" href="#/predictions">Predictions</a>
     </nav>
     <div class="rail-foot">
       <div class="svc"><span class="dot" id="dot-backend"></span>OMS backend</div>
@@ -427,6 +453,14 @@
     <div class="actions"><button class="btn ghost" data-close>Close</button></div>
   </div>
   <div class="scroll" id="v-body"></div>
+</aside>
+
+<aside class="drawer wide" id="btdrawer" aria-label="Backtest">
+  <div class="drawer-head">
+    <div><h2 id="bt-title">Backtest</h2><div class="muted" style="margin-top:6px">Replays historical Kalshi and Polymarket prices through this strategy's code. Nothing is traded.</div></div>
+    <div class="actions"><button class="btn ghost" data-close>Close</button></div>
+  </div>
+  <div class="scroll" id="bt-body"></div>
 </aside>
 
 <div class="toast" id="toast"></div>
@@ -689,6 +723,7 @@ function card(s) {
              <svg viewBox="0 0 14 14"><path d="M3 1.6v10.8a.6.6 0 0 0 .9.5l8.6-5.4a.6.6 0 0 0 0-1L3.9 1.1a.6.6 0 0 0-.9.5z" fill="currentColor"/></svg></button>
            <button class="btn" data-dry="${sid}" ${errors.length ? "disabled" : ""} title="${TEST_RUN_TIP}">Test run</button>`}
       <span class="spacer"></span>
+      ${s.backtestable ? `<button class="btn compact" data-bt="${sid}" title="Test this strategy on past prices">Backtest</button>` : ""}
       <button class="btn compact" data-versions="${sid}">Versions</button>
       <button class="btn icon-sq${st ? " on" : ""}" data-sched="${sid}" title="${st ? "Schedule: " + esc(st) : "Schedule automatic runs"}" aria-label="Schedule">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"/><path d="M10 6v4.2l2.8 1.8"/></svg>
@@ -1301,6 +1336,230 @@ function ticketPayload() {
   return { ...base, symbol: $("t-symbol").value, side: $("t-side").value };
 }
 
+// ---------- Predictions (Kalshi + Polymarket) ----------
+const PM_VENUES = [["kalshi", "Kalshi"], ["mentions", "Kalshi mentions"], ["polymarket", "Polymarket"], ["kalshi-demo", "Kalshi demo"]];
+const PM_LEDE = {
+  kalshi: "Live Kalshi markets. Paper orders fill against the live book; no real money is used.",
+  mentions: "Kalshi's \"What will X say\" markets, refreshed every 10 minutes. Paper orders fill against the live book.",
+  polymarket: "Live Polymarket markets. Paper orders fill against the live book; no real money is used.",
+  "kalshi-demo": "Kalshi's own demo exchange, with demo funds. Needs Kalshi demo API keys.",
+};
+// pm.venue is the tab; pmV() is the venue the API knows (mentions are Kalshi markets).
+const pm = { venue: "kalshi", q: "", sel: null, demo: false, paper: false, acct: null, timer: null };
+const pmV = () => (pm.venue === "mentions" ? "kalshi" : pm.venue);
+const cents = (v) => v == null || isNaN(v) ? "—" : (v * 100).toLocaleString("en-US", { maximumFractionDigits: 1 }) + "¢";
+const pmVol = (v) => v == null ? "—" : (pm.venue === "polymarket" ? "$" : "") + Number(v).toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 });
+views.predictions = {
+  interval: 5000,
+  mount() {
+    return `<div id="pm-head"></div>
+      <div class="pm-bar"><div class="segmented">${PM_VENUES.map(([v, l]) => `<button type="button" data-pm-venue="${v}" class="${pm.venue === v ? "on" : ""}">${l}</button>`).join("")}</div>
+        <input id="pm-q" type="search" placeholder="Search markets" value="${esc(pm.q)}" /></div>
+      <div id="pm-note"></div><div id="pm-paper"></div><div id="pm-portfolio"></div>
+      <div class="pm-grid" id="pm-grid"><div class="panel" id="body"></div><div class="panel pm-detail" id="pm-detail" style="display:none"><div id="pm-info"></div><div id="pm-ticket"></div></div></div>`;
+  },
+  bind() {
+    $("view").onclick = (e) => {
+      const v = e.target.closest("[data-pm-venue]"), row = e.target.closest("tr[data-pm]");
+      if (v) { pm.venue = v.dataset.pmVenue; pm.sel = null; document.querySelectorAll("[data-pm-venue]").forEach((b) => b.classList.toggle("on", b === v)); return pmSelect(null); }
+      if (row) return pmSelect(row.dataset.pm);
+      if (e.target.closest("[data-pm-close]")) return pmSelect(null);
+      const u = e.target.closest("[data-pm-url]");
+      if (u) { e.preventDefault(); return api().open_url(u.dataset.pmUrl); }
+      const acct = e.target.closest("tr[data-pm-acct]");
+      if (acct) { pm.acct = acct.dataset.pmAcct; return pmPaper(); }
+      const pc = e.target.closest("[data-pm-pcancel]");
+      if (pc) { pc.disabled = true; return oms("DELETE", `/api/predictions/paper/orders/${enc(pc.dataset.pmPcancel)}`).then(() => pmPaper()).catch((err) => toast(err.message, true)); }
+      const c = e.target.closest("[data-pm-cancel]");
+      if (c) { c.disabled = true; oms("DELETE", `/api/predictions/kalshi/orders/${enc(c.dataset.pmCancel)}`).then(() => views.predictions.update()).catch((err) => toast(err.message, true)); }
+    };
+    $("view").oninput = (e) => {
+      if (e.target.id === "pm-q") { clearTimeout(pm.timer); pm.timer = setTimeout(() => { pm.q = e.target.value.trim(); views.predictions.update(); }, 350); }
+      if (e.target.closest("#pm-form")) pmEstimate();
+      if (e.target.closest("#pm-paper-form")) pmPaperEstimate();
+    };
+    $("view").onchange = (e) => { if (e.target.closest("#pm-form")) pmEstimate(); if (e.target.closest("#pm-paper-form")) pmPaperEstimate(); };
+    $("view").onsubmit = async (e) => {
+      if (e.target.id === "pm-fund") {
+        e.preventDefault();
+        try {
+          await oms("POST", "/api/predictions/paper/accounts", { strategy_id: $("pm-fund-id").value, cash_budget: Number($("pm-fund-amt").value) });
+          pm.acct = $("pm-fund-id").value; toast("Funded"); pmPaper();
+        } catch (err) { toast(err.message, true); }
+        return;
+      }
+      if (e.target.id === "pm-paper-form") {
+        e.preventDefault();
+        const btn = e.target.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Sending…";
+        const lim = $("pp-limit").value.trim();
+        try {
+          const o = await oms("POST", "/api/predictions/paper/orders", { strategy_id: $("pp-strategy").value, venue: pmV(), market_id: pm.sel,
+            outcome: $("pp-outcome").value, action: $("pp-action").value, count: Number($("pp-count").value),
+            type: lim ? "limit" : "market", limit_price: lim ? Number(lim) / 100 : null });
+          $("pp-result").innerHTML = o.status === "rejected" || o.status === "canceled"
+            ? `<div class="banner" style="margin:10px 0 0">${esc(o.status)}: ${esc(o.reject_reason)}</div>`
+            : `<span class="muted">${esc(o.status)} · ${shares(o.filled_count)} of ${shares(o.count)} filled${o.avg_price != null ? " at " + cents(o.avg_price) : ""}</span>`;
+          pmPaper();
+        } catch (err) { $("pp-result").innerHTML = `<div class="banner" style="margin:10px 0 0">${esc(err.message)}</div>`; }
+        btn.disabled = false; btn.textContent = "Paper trade";
+        return;
+      }
+      if (e.target.id !== "pm-form") return;
+      e.preventDefault();
+      const btn = e.target.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Sending…";
+      try {
+        const o = await oms("POST", "/api/predictions/kalshi/orders", { ticker: pm.sel, side: $("pm-side").value, action: $("pm-action").value,
+          count: Number($("pm-count").value), price: Number($("pm-price").value) / 100 });
+        $("pm-result").innerHTML = `<span class="muted">Order <span class="mono">${esc(o.order_id)}</span> · ${esc(o.status)}</span>`;
+        toast("Demo order sent");
+      } catch (err) { $("pm-result").innerHTML = `<div class="banner" style="margin:10px 0 0">${esc(err.message)}</div>`; }
+      btn.disabled = false; btn.textContent = "Send demo order";
+    };
+  },
+  async update() {
+    $("pm-head").innerHTML = head("Predictions", PM_LEDE[pm.venue], `<span class="chip">Paper</span>`);
+    if (!state.oms.backend) return ($("body").innerHTML = omsDown());
+    const venue = pm.venue;
+    const [status, list] = await Promise.allSettled([oms("GET", "/api/predictions/status"),
+      oms("GET", `/api/predictions/markets?venue=${pmV()}&limit=60&q=${encodeURIComponent(pm.q)}${venue === "mentions" ? "&category=mentions" : ""}`)]);
+    if (venue !== pm.venue || current.name !== "predictions") return;
+    pm.demo = status.value?.kalshi_demo_configured ?? false;
+    pm.paper = status.value?.paper_ready ?? false;
+    const scan = status.value?.mentions_scan;
+    $("pm-note").innerHTML = (status.value && !pm.paper
+      ? `<div class="banner">Paper trading is not set up in the shared database yet. A Supabase admin needs to run backend/supabase_predictions.sql once. Browsing works now.</div>` : "")
+      + (venue === "mentions" && scan?.running ? `<p class="muted" style="margin:0 0 14px">Scanning Kalshi mention series: ${scan.done} of ${scan.total || "…"}. The list fills in as it goes.</p>` : "")
+      + (venue === "kalshi-demo" && status.value && !pm.demo
+      ? `<div class="banner">To place demo orders, create an API key at demo.kalshi.co and add KALSHI_DEMO_API_KEY_ID and KALSHI_DEMO_PRIVATE_KEY_PATH to backend/.env, then restart the OMS.</div>` : "");
+    const M = list.value || [];
+    $("body").innerHTML = `<div class="panel-head"><div><h2>Markets</h2><p>Busiest first. Prices are the YES side, in cents per $1 contract.</p></div><span class="muted">${M.length} shown</span></div>
+      ${list.status === "rejected" ? `<div class="banner" style="margin:14px">${esc(list.reason.message)}</div>` : ""}
+      ${M.length ? `<table><thead><tr><th>Market</th><th class="num">Bid</th><th class="num">Ask</th><th class="num">Last</th><th class="num">24h vol</th><th>Closes</th></tr></thead><tbody>
+        ${M.map((m) => `<tr data-pm="${esc(m.id)}" class="${m.id === pm.sel ? "sel" : ""}"><td><div>${esc(m.title)}</div>${m.subtitle ? `<div class="muted pm-sub">${esc(m.subtitle)}</div>` : ""}</td>
+          <td class="num">${cents(m.yes_bid)}</td><td class="num">${cents(m.yes_ask)}</td><td class="num">${cents(m.last)}</td>
+          <td class="num" data-sort="${m.volume_24h ?? 0}">${pmVol(m.volume_24h)}</td><td class="muted" data-sort="${esc(m.close_time ?? "")}">${m.close_time ? when(m.close_time) : "—"}</td></tr>`).join("")}
+        </tbody></table>` : list.status === "fulfilled" ? `<div class="empty">No open markets match.</div>` : ""}`;
+    await Promise.all([pmDetail(), pmPortfolio(), pmPaper()]);
+  },
+};
+function pmSelect(id) {
+  pm.sel = id;
+  document.querySelectorAll("tr[data-pm]").forEach((r) => r.classList.toggle("sel", r.dataset.pm === id));
+  $("pm-grid").classList.toggle("detail", !!id);
+  $("pm-detail").style.display = id ? "" : "none";
+  $("pm-info").innerHTML = id ? `<div class="empty">Loading…</div>` : "";
+  $("pm-ticket").innerHTML = "";
+  if (!id) return views.predictions.update();
+  pmDetail(true);
+}
+async function pmDetail(fresh = false) {
+  const id = pm.sel, tab = pm.venue, venue = pmV();
+  if (!id) { $("pm-portfolio") && pmPortfolio(); return; }
+  let m;
+  try { m = await oms("GET", `/api/predictions/markets/${venue}/${enc(id)}`); }
+  catch (err) { if (pm.sel === id) $("pm-info").innerHTML = `<div class="banner" style="margin:14px">${esc(err.message)}</div>`; return; }
+  if (pm.sel !== id || pm.venue !== tab) return;
+  const b = m.book || { bids: [], asks: [] }, rows = Math.min(Math.max(b.bids.length, b.asks.length), 8);
+  $("pm-info").innerHTML = `<div class="panel-head"><div><h2>${esc(m.title)}</h2><p>${m.subtitle ? esc(m.subtitle) + " · " : ""}<span class="mono">${esc(m.id)}</span></p></div><button class="btn sm" data-pm-close>Close</button></div>
+    <div class="balances"><div><span>YES bid</span><strong>${cents(m.yes_bid)}</strong></div><div><span>YES ask</span><strong>${cents(m.yes_ask)}</strong></div>
+      <div><span>Last</span><strong>${cents(m.last)}</strong></div><div><span>Closes</span><strong>${m.close_time ? when(m.close_time) : "—"}</strong></div></div>
+    ${m.outcomes && m.outcomes.length > 2 ? `<p class="pm-rules">${m.outcomes.map((o) => `${esc(o.name)} ${cents(o.price)}`).join(" · ")}</p>` : ""}
+    ${rows ? `<table><thead><tr><th class="num">Bid size</th><th class="num">YES bid</th><th class="num">YES ask</th><th class="num">Ask size</th></tr></thead><tbody>
+      ${Array.from({ length: rows }, (_, i) => `<tr><td class="num muted">${b.bids[i] ? shares(b.bids[i][1]) : ""}</td><td class="num up">${b.bids[i] ? cents(b.bids[i][0]) : ""}</td>
+        <td class="num down">${b.asks[i] ? cents(b.asks[i][0]) : ""}</td><td class="num muted">${b.asks[i] ? shares(b.asks[i][1]) : ""}</td></tr>`).join("")}</tbody></table>`
+      : `<div class="empty">The order book is empty.</div>`}
+    ${m.rules ? `<p class="pm-rules">${esc(m.rules)}</p>` : ""}
+    ${m.url ? `<p class="pm-rules"><a href="#" data-pm-url="${esc(m.url)}">Open on ${venue === "polymarket" ? "Polymarket" : "Kalshi"}</a></p>` : ""}`;
+  if (fresh && venue !== "kalshi-demo" && pm.paper) pmPaperTicket(m);
+  if (fresh && venue === "kalshi-demo" && pm.demo) {
+    $("pm-ticket").innerHTML = `<form id="pm-form"><div class="fields">
+        <label class="f">Side<select id="pm-side"><option value="yes">YES</option><option value="no">NO</option></select></label>
+        <label class="f">Action<select id="pm-action"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
+        <label class="f">Contracts<input id="pm-count" value="1" inputmode="numeric" required /></label>
+        <label class="f">Limit (¢)<input id="pm-price" inputmode="numeric" required placeholder="${Math.round((m.yes_ask ?? 0.5) * 100)}" /></label></div>
+      <div class="ticket-foot"><span class="muted" id="pm-est">Limit order on the Kalshi demo exchange.</span><button class="btn primary" type="submit">Send demo order</button></div>
+      <div id="pm-result"></div></form>`;
+  }
+}
+let pmTicketMarket = null;
+async function pmPaperTicket(m) {
+  pmTicketMarket = m;
+  let accts = [];
+  try { accts = await oms("GET", "/api/predictions/paper/accounts"); } catch (err) { return; }
+  if (pm.sel !== m.id) return;
+  if (!accts.length) return ($("pm-ticket").innerHTML = `<p class="pm-rules">Fund a strategy in Paper accounts above to place paper orders.</p>`);
+  $("pm-ticket").innerHTML = `<form id="pm-paper-form"><div class="fields">
+      <label class="f">Strategy<select id="pp-strategy">${accts.map((a) => `<option value="${esc(a.strategy_id)}" ${a.strategy_id === pm.acct ? "selected" : ""}>${esc(a.strategy_id)} · ${money(a.cash)}</option>`).join("")}</select></label>
+      <label class="f">Outcome<select id="pp-outcome"><option value="yes">YES</option><option value="no">NO</option></select></label>
+      <label class="f">Action<select id="pp-action"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
+      <label class="f">Contracts<input id="pp-count" value="10" inputmode="decimal" required /></label>
+      <label class="f">Limit (¢)<input id="pp-limit" inputmode="decimal" placeholder="blank = market" /></label></div>
+    <div class="ticket-foot"><span class="muted" id="pp-est">Fills against the live order book.</span><button class="btn primary" type="submit">Paper trade</button></div>
+    <div id="pp-result"></div></form>`;
+  pmPaperEstimate();
+}
+function pmPaperEstimate() {
+  const m = pmTicketMarket; if (!m || !$("pp-count")) return;
+  const out = $("pp-outcome").value, buy = $("pp-action").value === "buy", n = Number($("pp-count").value), lim = $("pp-limit").value.trim();
+  const quoted = out === "yes" ? (buy ? m.yes_ask : m.yes_bid) : (buy ? (m.yes_bid != null ? 1 - m.yes_bid : null) : (m.yes_ask != null ? 1 - m.yes_ask : null));
+  const p = lim ? Number(lim) / 100 : quoted;
+  $("pp-est").textContent = n > 0 && p ? `About ${money(n * p)} at ${cents(p)}, pays ${money(n)} if ${out.toUpperCase()}` : "Fills against the live order book.";
+}
+async function pmPaper() {
+  if (!pm.paper || !$("pm-paper")) return ($("pm-paper") && ($("pm-paper").innerHTML = ""));
+  if (document.activeElement?.closest?.("#pm-paper")) return;  // don't wipe a half-typed fund amount
+  let accts, strategies;
+  try { [accts, strategies] = await Promise.all([oms("GET", "/api/predictions/paper/accounts"), oms("GET", "/api/strategies")]); }
+  catch (err) { return ($("pm-paper").innerHTML = `<div class="banner">${esc(err.message)}</div>`); }
+  const funded = new Set(accts.map((a) => a.strategy_id)), unfunded = strategies.filter((s) => !funded.has(s.id));
+  if (!pm.acct || !funded.has(pm.acct)) pm.acct = accts[0]?.strategy_id ?? null;
+  let book = null;
+  if (pm.acct) { try { book = await oms("GET", `/api/predictions/paper/accounts/${enc(pm.acct)}`); } catch { book = null; } }
+  if (current.name !== "predictions") return;
+  const orderRows = (list, cancel) => list.map((o) => `<tr><td><div>${esc(o.title || o.market_id)}</div><div class="muted pm-sub">${when(o.created_at)}</div></td>
+    <td>${esc(o.action)} ${shares(o.count)} ${esc(o.outcome.toUpperCase())} ${o.limit_price != null ? "@ " + cents(o.limit_price) : "market"}</td>
+    <td class="num">${shares(o.filled_count)}</td><td class="num">${cents(o.avg_price)}</td>
+    <td>${esc(o.status)}${o.reject_reason ? `<div class="muted pm-sub">${esc(o.reject_reason)}</div>` : ""}</td>
+    <td class="num">${cancel ? `<button class="btn sm danger" data-pm-pcancel="${esc(o.id)}">Cancel</button>` : ""}</td></tr>`).join("");
+  const open = book ? book.orders.filter((o) => o.status === "open") : [], recent = book ? book.orders.filter((o) => o.status !== "open").slice(0, 8) : [];
+  const ohead = `<thead><tr><th>Market</th><th>Order</th><th class="num">Filled</th><th class="num">Avg</th><th>Status</th><th></th></tr></thead>`;
+  $("pm-paper").innerHTML = `<div class="panel"><div class="panel-head"><div><h2>Paper accounts</h2><p>Prediction-market cash per strategy, separate from its Alpaca budget</p></div></div>
+    ${accts.length ? `<table><thead><tr><th>Strategy</th><th class="num">Equity</th><th class="num">Cash</th><th class="num">In orders</th><th class="num">Positions</th><th class="num">Total P&amp;L</th><th class="num">Fees</th></tr></thead><tbody>
+      ${accts.map((a) => `<tr data-pm-acct="${esc(a.strategy_id)}" class="${a.strategy_id === pm.acct ? "sel" : ""}" style="cursor:pointer"><td><span class="chip">${esc(a.strategy_id)}</span></td>
+        <td class="num">${money(a.equity)}</td><td class="num">${money(a.cash)}</td><td class="num">${money(a.cash_reserved)}</td><td class="num">${a.open_positions}</td>
+        <td class="num ${tone(a.total_pnl)}">${money(a.total_pnl)}</td><td class="num">${money(a.fees_paid)}</td></tr>`).join("")}</tbody></table>`
+      : `<div class="empty">No strategy has prediction paper cash yet. Fund one below.</div>`}
+    ${unfunded.length ? `<form id="pm-fund" class="pm-fund"><label class="f">Strategy<select id="pm-fund-id">${unfunded.map((s) => `<option value="${esc(s.id)}">${esc(s.id)}</option>`).join("")}</select></label>
+      <label class="f">Paper cash<input id="pm-fund-amt" value="1000" inputmode="decimal" /></label><button class="btn primary" type="submit">Fund</button></form>` : ""}
+    ${book ? `<div class="pm-sub-head">${esc(pm.acct)} positions</div>
+      ${book.positions.length ? `<table><thead><tr><th>Market</th><th>Side</th><th class="num">Contracts</th><th class="num">Avg</th><th class="num">Mark</th><th class="num">Value</th><th class="num">Unrealized</th></tr></thead><tbody>
+        ${book.positions.map((p) => `<tr><td><div>${esc(p.title || p.market_id)}</div><div class="muted pm-sub">${esc(p.venue)} · <span class="mono">${esc(p.market_id)}</span></div></td>
+          <td>${esc(p.outcome.toUpperCase())}</td><td class="num">${shares(p.count)}</td><td class="num">${cents(p.avg_price)}</td><td class="num">${cents(p.mark)}</td>
+          <td class="num">${money(p.market_value)}</td><td class="num ${tone(p.unrealized_pnl)}">${money(p.unrealized_pnl)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No open positions.</div>`}
+      ${open.length ? `<div class="pm-sub-head">Resting orders</div><table>${ohead}<tbody>${orderRows(open, true)}</tbody></table>` : ""}
+      ${recent.length ? `<div class="pm-sub-head">Recent orders</div><table>${ohead}<tbody>${orderRows(recent, false)}</tbody></table>` : ""}` : ""}</div>`;
+}
+function pmEstimate() {
+  const n = Number($("pm-count").value), p = Number($("pm-price").value) / 100, side = $("pm-side").value, buy = $("pm-action").value === "buy";
+  $("pm-est").textContent = n > 0 && p > 0 ? `${buy ? "Costs" : "Receives"} ${money(n * p)}, pays ${money(n)} if ${side.toUpperCase()}` : "Limit order on the Kalshi demo exchange.";
+}
+async function pmPortfolio() {
+  if (pm.venue !== "kalshi-demo" || !pm.demo) return ($("pm-portfolio").innerHTML = "");
+  let d;
+  try { d = await oms("GET", "/api/predictions/kalshi/portfolio"); }
+  catch (err) { return ($("pm-portfolio").innerHTML = `<div class="banner">${esc(err.message)}</div>`); }
+  if (pm.venue !== "kalshi-demo") return;
+  const open = d.orders.filter((o) => o.status === "resting");
+  $("pm-portfolio").innerHTML = `<div class="panel"><div class="panel-head"><div><h2>Kalshi demo account</h2><p>Balance, positions, and resting orders on the paper exchange</p></div><span class="chip">Paper</span></div>
+    <div class="balances"><div><span>Cash</span><strong>${money(d.balance)}</strong></div><div><span>Positions value</span><strong>${money(d.portfolio_value)}</strong></div></div>
+    ${d.positions.length ? `<table><thead><tr><th>Market</th><th class="num">Contracts</th><th class="num">Exposure</th><th class="num">Realized</th></tr></thead><tbody>
+      ${d.positions.map((p) => `<tr><td class="mono">${esc(p.ticker)}</td><td class="num">${p.position < 0 ? shares(-p.position) + " NO" : shares(p.position) + " YES"}</td>
+        <td class="num">${money(p.exposure)}</td><td class="num ${tone(p.realized_pnl)}">${money(p.realized_pnl)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No open demo positions.</div>`}
+    ${open.length ? `<table><thead><tr><th>Resting order</th><th>Side</th><th class="num">Price</th><th class="num">Left</th><th></th></tr></thead><tbody>
+      ${open.map((o) => `<tr><td class="mono">${esc(o.ticker)}</td><td>${esc(o.action)} ${esc((o.side || "").toUpperCase())}</td><td class="num">${cents(o.side === "no" ? o.no_price : o.yes_price)}</td>
+        <td class="num">${shares(o.remaining)}</td><td class="num"><button class="btn sm danger" data-pm-cancel="${esc(o.order_id)}">Cancel</button></td></tr>`).join("")}</tbody></table>` : ""}</div>`;
+}
+
 // ---------- router ----------
 function parseHash() {
   const [name, ...rest] = (location.hash.replace(/^#\/?/, "") || "desk").split("/");
@@ -1315,7 +1574,7 @@ async function route() {
     current = { name, arg, timer: null };
     document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("active",
       a.dataset.nav === name || (a.dataset.nav === "strategies" && name === "strategy") || (a.dataset.nav === "account" && name === "position")));
-    $("view").onsubmit = $("view").oninput = $("view").onchange = null;
+    $("view").onsubmit = $("view").oninput = $("view").onchange = $("view").onclick = null;
     $("view").innerHTML = v.mount(arg);
     $("view").scrollTop = 0;
     const key = `${name}|${arg ?? ""}`;
@@ -1372,8 +1631,87 @@ async function refreshLog() {
 }
 function closeOverlays() {
   openRunId = null; schedNotebook = null; versionsFor = null;
-  ["drawer", "vdrawer", "scrim", "sched", "newstrat"].forEach((id) => $(id).classList.remove("open"));
+  btFor = null;
+  ["drawer", "vdrawer", "btdrawer", "scrim", "sched", "newstrat"].forEach((id) => $(id).classList.remove("open"));
 }
+
+// ---------- backtest drawer ----------
+let btFor = null, btTimer = null;
+const isoDay = (d) => d.toISOString().slice(0, 10);
+async function openBacktest(sid) {
+  btFor = sid;
+  $("bt-title").textContent = "Backtest " + sid;
+  const end = new Date(), start = new Date(Date.now() - 14 * 86400e3);
+  $("bt-body").innerHTML = `<form class="bt-form" id="bt-form">
+      <label class="f">From<input type="date" id="bt-start" value="${isoDay(start)}" required /></label>
+      <label class="f">To<input type="date" id="bt-end" value="${isoDay(end)}" max="${isoDay(end)}" required /></label>
+      <label class="f">Run the strategy every<select id="bt-step"><option value="1">hour</option><option value="3">3 hours</option><option value="6">6 hours</option><option value="24">day</option></select></label>
+      <label class="f">Kalshi series (optional)<input id="bt-series" placeholder="all Mentions series, e.g. KXTRUMPMENTION" /></label>
+      <label class="f">Polymarket filter (optional)<input id="bt-pq" placeholder="question contains…" /></label>
+      <div class="wide"><button class="btn primary" type="submit" id="bt-go">Run backtest</button>
+        <span class="muted" style="font-size:12.5px">The first run of a period downloads its history (a few minutes); later runs reuse it.</span></div>
+    </form>
+    <div id="bt-run"></div><div id="bt-list"></div>`;
+  $("btdrawer").classList.add("open"); $("scrim").classList.add("open");
+  $("bt-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const res = await api().start_backtest(sid, $("bt-start").value, $("bt-end").value, Number($("bt-step").value), $("bt-series").value, $("bt-pq").value);
+    if (!res.ok) return toast(res.error, true);
+    btPoll();
+  };
+  btPoll();
+  renderBacktests();
+}
+async function btPoll() {
+  clearTimeout(btTimer);
+  if (!btFor) return;
+  const st = await api().backtest_status();
+  const mine = st.sid === btFor;
+  $("bt-go").disabled = !!st.running;
+  if (st.running) {
+    $("bt-run").innerHTML = `<div class="bt-run"><span class="badge running">running</span><span>${mine ? "" : esc(st.sid) + ": "}${esc(st.progress)} · ${st.elapsed}s</span><span class="spacer"></span><button class="btn sm danger" data-bt-stop>Stop</button></div>`;
+    btTimer = setTimeout(btPoll, 2000);
+  } else if (mine && st.error) {
+    $("bt-run").innerHTML = `<div class="banner" style="margin:14px 22px">${esc(st.error)}</div>`;
+  } else {
+    $("bt-run").innerHTML = "";
+    if (mine && st.summary) renderBacktests();
+  }
+}
+function spark(curve, start) {
+  if (!curve || curve.length < 2) return "";
+  const lo = Math.min(...curve, start), hi = Math.max(...curve, start), span = hi - lo || 1, w = 600, h = 56;
+  const pts = curve.map((v, i) => `${(i / (curve.length - 1) * w).toFixed(1)},${(h - 4 - (v - lo) / span * (h - 8)).toFixed(1)}`).join(" ");
+  const base = (h - 4 - (start - lo) / span * (h - 8)).toFixed(1);
+  const color = curve[curve.length - 1] >= start ? "var(--brand)" : "var(--bad)";
+  return `<svg class="bt-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${base}" y2="${base}" stroke="var(--border-strong)" stroke-dasharray="4 4"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+}
+async function renderBacktests() {
+  if (!btFor) return;
+  const list = await api().backtests(btFor);
+  if (!btFor) return;
+  const mk = (rows) => rows.map((m) => `${esc(m.market_id)} <span class="${tone(m.pnl)}">${signed(m.pnl)}</span>`).join(" · ");
+  $("bt-list").innerHTML = list.length ? list.map((b) => `<div class="bt-card">
+      <h3><span>${esc(b.start.slice(0, 10))} → ${esc(b.end.slice(0, 10))} <span class="muted" style="font-weight:400">· every ${b.step_hours}h</span></span>
+        <button class="btn sm" data-bt-open="${esc(b.output)}">Open folder</button></h3>
+      <div class="bt-stats">
+        <div><span>Return</span><strong class="${tone(b.total_pnl)}">${pct(b.return_pct)} <span style="font-size:12px">${signed(b.total_pnl)}</span></strong></div>
+        <div><span>Max drawdown</span><strong>${b.max_drawdown_pct.toFixed(1)}%</strong></div>
+        <div><span>Win rate</span><strong>${b.win_rate_pct == null ? "—" : b.win_rate_pct.toFixed(1) + "%"}</strong></div>
+        <div><span>Markets · fees</span><strong>${b.markets_traded} · ${money(b.fees)}</strong></div>
+      </div>
+      ${spark(b.curve, b.starting_cash)}
+      ${b.steps_with_errors ? `<div class="bt-mk" style="color:var(--bad)">${b.steps_with_errors} steps raised an error (see log.txt in the folder)</div>` : ""}
+      ${b.best_markets.length ? `<div class="bt-mk">Best: ${mk(b.best_markets.slice(0, 3))}<br>Worst: ${mk(b.worst_markets.slice(0, 3))}</div>` : `<div class="bt-mk">No trades in this period.</div>`}
+    </div>`).join("") : `<div class="empty">No backtests yet. Pick a period above and run one.</div>`;
+}
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-bt],[data-bt-stop],[data-bt-open]");
+  if (!t) return;
+  if (t.dataset.bt) return openBacktest(t.dataset.bt);
+  if (t.dataset.btOpen) return api().reveal_path(t.dataset.btOpen);
+  if (t.hasAttribute("data-bt-stop")) return api().stop_backtest().then(btPoll);
+});
 
 // ---------- versions drawer ----------
 let versionsFor = null, diffOpen = null;

@@ -128,6 +128,20 @@ Other reads:
 - `GET /api/positions/{symbol}` — the account position plus each strategy's trades in that symbol
 - `DELETE /api/orders/{id}` — cancel
 
+## Prediction markets
+
+The **Predictions** tab (web dashboard and SimpliEarn Desk) lists open Kalshi and Polymarket markets, busiest first, with each market's YES order book. **Kalshi mentions** lists Kalshi's "What will X say" markets; the backend scans Kalshi's Mentions series in the background every 10 minutes.
+
+**Paper trading (no real money).** Nothing is sent to Kalshi or Polymarket. An order fills against the venue's live order book at the moment it is placed, the way a taker order would; a limit order's remainder rests and fills when the live book trades through its price (checked every 10 seconds). Positions pay $1 per winning contract when the market resolves. Kalshi fills are whole contracts and pay Kalshi's taker fee (7% x contracts x price x (1 - price), rounded up to the cent); resting fills and Polymarket fills are free. Each strategy gets prediction cash separate from its Alpaca budget: fund it in the tab, or with `PredictionMarkets().fund(...)`.
+
+The paper book lives in four tables in the shared database (`pm_accounts`, `pm_orders`, `pm_fills`, `pm_positions`). `oms_app` cannot create tables, so a Supabase admin runs [`backend/supabase_predictions.sql`](backend/supabase_predictions.sql) once in the SQL editor. Until then the tab shows a banner and browsing still works.
+
+Strategies use `PredictionMarkets` from `oms_client` (see its docstring). [`strategies/templates/kalshi_mentions.py`](strategies/templates/kalshi_mentions.py) is a starter mention-market strategy and [`poly_favorites.py`](strategies/templates/poly_favorites.py) a Polymarket one.
+
+**Kalshi demo** is Kalshi's own demo exchange. It needs `KALSHI_DEMO_API_KEY_ID` and `KALSHI_DEMO_PRIVATE_KEY_PATH` in `backend/.env` (keys from [demo.kalshi.co](https://demo.kalshi.co)); its markets are thin, so the paper engine above is usually the better test.
+
+Endpoints: `GET /api/predictions/markets?venue=kalshi|polymarket|kalshi-demo&q=&category=mentions`, `GET /api/predictions/markets/{venue}/{id}`, `GET|POST /api/predictions/paper/accounts`, `POST /api/predictions/paper/accounts/{id}/deposit`, `GET /api/predictions/paper/accounts/{id}`, `GET|POST /api/predictions/paper/orders`, `DELETE /api/predictions/paper/orders/{id}`, and `/api/predictions/kalshi/*` for the demo exchange.
+
 ## Cash in this version
 
 A limit buy, a notional market buy, a debit option, or a debit multi-leg order is rejected when its estimated cost is above the strategy's spendable cash. Accepting the order reserves that cost immediately, so a second order cannot spend it. The reservation is released on reject, cancel, or expiry, and adjusted when the fill price differs from the estimate. Sells and credit multi-leg orders change cash when Alpaca reports the fill. The multiplier is 1 for stocks and 100 for options. `sell_to_open` is forwarded to Alpaca without an options-margin model.
