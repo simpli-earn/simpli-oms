@@ -292,3 +292,28 @@ class CodeSummaryOut(BaseModel):
     updated_at: datetime
     files: int
     size: int
+
+
+class InstallIn(BaseModel):
+    strategy_id: str = Field(min_length=1, max_length=64)
+    version: str | None = Field(default=None, max_length=64)
+    schedule: dict | None = None
+    last_run_at: datetime | None = None
+    last_run_status: str | None = Field(default=None, max_length=32)
+
+
+class InstallsIn(BaseModel):
+    """Every strategy on one laptop. Ones this laptop reported before but not now are marked
+    not installed. app_open is false when a scheduled run reports with the app closed."""
+
+    strategies: list[InstallIn] = Field(default_factory=list)
+    app_open: bool = True
+
+
+class InstallOut(BaseModel):
+    host: str
+    version: str | None
+    schedule: dict | None
+    last_run_at: datetime | None
+    last_run_status: str | None
+    seen_at: datetime

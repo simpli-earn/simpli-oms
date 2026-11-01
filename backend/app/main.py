@@ -10,7 +10,7 @@ from sqlalchemy import text
 from app.config import Settings
 from app.database import make_engine, make_session_factory
 from app.models import Base
-from app.routers import code, orders, portfolio, strategies
+from app.routers import code, installs, orders, portfolio, strategies
 from app.services.broker import AlpacaBroker, Broker
 from app.services.sync import sync_once
 
@@ -68,6 +68,7 @@ def create_app(settings: Settings | None = None, broker: Broker | None = None) -
     app.include_router(orders.router)
     app.include_router(portfolio.router)
     app.include_router(code.router)
+    app.include_router(installs.router)
 
     @app.get("/api/health", tags=["system"])
     def health():

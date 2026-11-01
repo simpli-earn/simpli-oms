@@ -181,6 +181,18 @@ create table if not exists public.strategy_files (
 
 alter table public.strategy_files drop column if exists deleted;
 
+create table if not exists public.strategy_installs (
+    strategy_id varchar(64) not null references public.strategies(id),
+    host varchar(128) not null,
+    installed boolean not null default true,
+    version varchar(64),
+    schedule jsonb,
+    last_run_at timestamptz,
+    last_run_status varchar(32),
+    seen_at timestamptz not null default now(),
+    primary key (strategy_id, host)
+);
+
 alter table public.strategies enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_legs enable row level security;
@@ -189,6 +201,7 @@ alter table public.strategy_positions enable row level security;
 alter table public.ledger_entries enable row level security;
 alter table public.strategy_code enable row level security;
 alter table public.strategy_files enable row level security;
+alter table public.strategy_installs enable row level security;
 
 revoke all on table public.strategies from public, anon, authenticated, service_role;
 revoke all on table public.orders from public, anon, authenticated, service_role;
@@ -198,6 +211,7 @@ revoke all on table public.strategy_positions from public, anon, authenticated, 
 revoke all on table public.ledger_entries from public, anon, authenticated, service_role;
 revoke all on table public.strategy_code from public, anon, authenticated, service_role;
 revoke all on table public.strategy_files from public, anon, authenticated, service_role;
+revoke all on table public.strategy_installs from public, anon, authenticated, service_role;
 
 do $$
 declare
@@ -211,7 +225,7 @@ begin
     execute 'grant connect on database postgres to oms_app';
     foreach tbl in array array[
         'strategies', 'orders', 'order_legs', 'fills', 'strategy_positions', 'ledger_entries',
-        'strategy_code', 'strategy_files'
+        'strategy_code', 'strategy_files', 'strategy_installs'
     ]
     loop
         execute format('grant select, insert, update on table public.%I to oms_app', tbl);
